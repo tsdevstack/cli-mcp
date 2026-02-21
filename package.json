@@ -1,0 +1,69 @@
+{
+  "name": "@tsdevstack/cli-mcp",
+  "version": "0.0.1",
+  "description": "MCP server for tsdevstack CLI — exposes tools and resources to AI agents",
+  "author": "tsdevstack",
+  "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tsdevstack/cli-mcp.git"
+  },
+  "homepage": "https://github.com/tsdevstack/cli-mcp",
+  "bugs": {
+    "url": "https://github.com/tsdevstack/cli-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "tsdevstack",
+    "ai-agents",
+    "claude",
+    "infrastructure",
+    "devops",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "tsc": "tsc --noEmit",
+    "test": "rstest run",
+    "test:watch": "rstest --watch"
+  },
+  "peerDependencies": {
+    "@tsdevstack/cli": "0.0.1",
+    "commander": "^12.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@rslib/core": "^0.19.6",
+    "@rstest/adapter-rslib": "^0.2.0",
+    "@rstest/core": "^0.8.5",
+    "@types/node": "^24.10.13",
+    "eslint": "^9.39.2",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.55.0"
+  }
+}
