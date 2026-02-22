@@ -1,6 +1,6 @@
 {
   "name": "@tsdevstack/cli-mcp",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "MCP server for tsdevstack CLI — exposes tools and resources to AI agents",
   "author": "tsdevstack",
   "private": false,
@@ -47,7 +47,7 @@
     "test:watch": "rstest --watch"
   },
   "peerDependencies": {
-    "tsdevstack": "0.0.1",
+    "tsdevstack": ">=0.1.0",
     "commander": "^12.0.0"
   },
   "dependencies": {
