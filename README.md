@@ -16,7 +16,7 @@ MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 48 to
 npm install @tsdevstack/cli-mcp
 ```
 
-Requires `@tsdevstack/cli` as a peer dependency.
+Requires `tsdevstack` as a peer dependency.
 
 ## Usage
 
