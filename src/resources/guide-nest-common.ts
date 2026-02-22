@@ -10,7 +10,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 const NEST_COMMON_CONTENT = `# nest-common — Practical Notes
 
-**Full reference:** https://docs.tsdevstack.dev/packages/nest-common
+**Full reference:** See the docs-site at \`/packages/nest-common\`
 
 These notes supplement the docs-site with AI-agent-specific guidance.
 
