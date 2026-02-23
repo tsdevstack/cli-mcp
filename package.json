@@ -1,7 +1,7 @@
 {
   "name": "@tsdevstack/cli-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for tsdevstack CLI — exposes tools and resources to AI agents",
+  "version": "0.1.5",
+  "description": "MCP server for tsdevstack CLI - exposes tools and resources to AI agents",
   "author": "tsdevstack",
   "private": false,
   "license": "MIT",
