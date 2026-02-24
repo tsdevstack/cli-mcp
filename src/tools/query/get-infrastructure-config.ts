@@ -9,16 +9,18 @@ import { join } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export function registerGetInfrastructureConfigTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'get_infrastructure_config',
-    'Per-environment infrastructure settings: DB tiers, domains, scaling, custom overrides. This is a user-created file.',
-    {},
     {
       title: 'Get Infrastructure Config',
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Per-environment infrastructure settings: DB tiers, domains, scaling, custom overrides. This is a user-created file.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => {
       try {

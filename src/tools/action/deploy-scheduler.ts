@@ -9,22 +9,25 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerDeploySchedulerTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'deploy_scheduler',
-    'Deploy a single scheduled job. Alternative to batch deploy_schedulers.',
-    {
-      job: z
-        .string()
-        .optional()
-        .describe('Scheduled job name to deploy (optional)'),
-      env: z.string().optional().describe('Target environment (optional)'),
-    },
     {
       title: 'Deploy Scheduler',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Deploy a single scheduled job. Alternative to batch deploy_schedulers.',
+      inputSchema: {
+        job: z
+          .string()
+          .optional()
+          .describe('Scheduled job name to deploy (optional)'),
+        env: z.string().optional().describe('Target environment (optional)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ job, env }) => {
       const args = ['infra:deploy-scheduler'];

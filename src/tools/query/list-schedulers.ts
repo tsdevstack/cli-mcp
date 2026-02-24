@@ -9,18 +9,20 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerListSchedulersTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'list_schedulers',
-    'Scheduled jobs (cron tasks) and their deployment status.',
-    {
-      env: z.string().describe('Target environment (dev, staging, prod)'),
-    },
     {
       title: 'List Schedulers',
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: 'Scheduled jobs (cron tasks) and their deployment status.',
+      inputSchema: {
+        env: z.string().describe('Target environment (dev, staging, prod)'),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env }) => runCommand(['infra:list-schedulers', '--env', env]),
   );

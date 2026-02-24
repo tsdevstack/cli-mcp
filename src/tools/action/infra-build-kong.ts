@@ -9,19 +9,22 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerInfraBuildKongTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'infra_build_kong',
-    'Build Kong Docker image. Usually called internally by deploy-kong.',
-    {
-      env: z.string().optional().describe('Target environment (optional)'),
-      tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
-    },
     {
       title: 'Build Kong Image',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Build Kong Docker image. Usually called internally by deploy-kong.',
+      inputSchema: {
+        env: z.string().optional().describe('Target environment (optional)'),
+        tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env, tag }) => {
       const args = ['infra:build-kong'];

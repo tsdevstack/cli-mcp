@@ -9,19 +9,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerRemoveDetachedWorkerTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'remove_detached_worker',
-    'Remove a detached worker from cloud. Cannot be undone.',
-    {
-      worker: z.string().describe('Worker name to remove'),
-      env: z.string().describe('Target environment (dev, staging, prod)'),
-    },
     {
       title: 'Remove Detached Worker (Cloud)',
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: false,
-      openWorldHint: false,
+      description: 'Remove a detached worker from cloud. Cannot be undone.',
+      inputSchema: {
+        worker: z.string().describe('Worker name to remove'),
+        env: z.string().describe('Target environment (dev, staging, prod)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async ({ worker, env }) =>
       runCommand([

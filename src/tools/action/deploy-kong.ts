@@ -9,18 +9,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerDeployKongTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'deploy_kong',
-    'Rebuild and deploy Kong gateway. Run after changing routes (adding endpoints, changing auth decorators).',
-    {
-      env: z.string().describe('Target environment (dev, staging, prod)'),
-    },
     {
       title: 'Deploy Kong',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Rebuild and deploy Kong gateway. Run after changing routes (adding endpoints, changing auth decorators).',
+      inputSchema: {
+        env: z.string().describe('Target environment (dev, staging, prod)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env }) => runCommand(['infra:deploy-kong', '--env', env]),
   );

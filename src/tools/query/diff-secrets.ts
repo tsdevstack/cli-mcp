@@ -9,18 +9,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerDiffSecretsTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'diff_secrets',
-    "Compare local secret names vs cloud — shows what's missing or extra. Run before deploying to catch mismatches.",
-    {
-      env: z.string().describe('Target environment (dev, staging, prod)'),
-    },
     {
       title: 'Diff Secrets',
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Compare local secret names vs cloud — shows what's missing or extra. Run before deploying to catch mismatches.",
+      inputSchema: {
+        env: z.string().describe('Target environment (dev, staging, prod)'),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env }) => runCommand(['cloud-secrets:diff', '--env', env]),
   );

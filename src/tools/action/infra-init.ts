@@ -9,18 +9,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerInfraInitTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'infra_init',
-    'Initialize infrastructure (creates Terraform state bucket). One-time setup per environment.',
-    {
-      env: z.string().describe('Target environment (dev, staging, prod)'),
-    },
     {
       title: 'Infra Init',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Initialize infrastructure (creates Terraform state bucket). One-time setup per environment.',
+      inputSchema: {
+        env: z.string().describe('Target environment (dev, staging, prod)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env }) => runCommand(['infra:init', '--env', env]),
   );

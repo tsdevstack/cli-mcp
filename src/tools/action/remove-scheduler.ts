@@ -9,19 +9,22 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerRemoveSchedulerTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'remove_scheduler',
-    'Remove a single scheduled job from cloud. Cannot be undone.',
-    {
-      job: z.string().optional().describe('Job name to remove (optional)'),
-      env: z.string().optional().describe('Target environment (optional)'),
-    },
     {
       title: 'Remove Scheduler',
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: false,
-      openWorldHint: false,
+      description:
+        'Remove a single scheduled job from cloud. Cannot be undone.',
+      inputSchema: {
+        job: z.string().optional().describe('Job name to remove (optional)'),
+        env: z.string().optional().describe('Target environment (optional)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async ({ job, env }) => {
       const args = ['infra:remove-scheduler'];

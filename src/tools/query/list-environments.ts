@@ -13,16 +13,18 @@ interface CredentialEnvEntry {
 }
 
 export function registerListEnvironmentsTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'list_environments',
-    'List configured cloud environments (dev, staging, prod) and their providers.',
-    {},
     {
       title: 'List Environments',
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'List configured cloud environments (dev, staging, prod) and their providers.',
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => {
       try {

@@ -9,23 +9,26 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerDeployServiceTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'deploy_service',
-    'Build, push, deploy a single service (full workflow). Alternative to deploy_services --service. Supports optional tag override.',
-    {
-      service: z.string().describe('Service name to deploy'),
-      env: z.string().optional().describe('Target environment (optional)'),
-      tag: z
-        .string()
-        .optional()
-        .describe('Image tag to deploy (defaults to current git SHA)'),
-    },
     {
       title: 'Deploy Service',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Build, push, deploy a single service (full workflow). Alternative to deploy_services --service. Supports optional tag override.',
+      inputSchema: {
+        service: z.string().describe('Service name to deploy'),
+        env: z.string().optional().describe('Target environment (optional)'),
+        tag: z
+          .string()
+          .optional()
+          .describe('Image tag to deploy (defaults to current git SHA)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ service, env, tag }) => {
       const args = ['infra:deploy-service', service];

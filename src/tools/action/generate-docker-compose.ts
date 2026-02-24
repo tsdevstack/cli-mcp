@@ -8,16 +8,18 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerGenerateDockerComposeTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'generate_docker_compose',
-    'Regenerate docker-compose.yml from current config. Run after adding services.',
-    {},
     {
       title: 'Generate Docker Compose',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Regenerate docker-compose.yml from current config. Run after adding services.',
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => runCommand(['generate-docker-compose']),
   );

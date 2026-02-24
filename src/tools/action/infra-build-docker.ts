@@ -9,23 +9,26 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerInfraBuildDockerTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'infra_build_docker',
-    'Build Docker images with BuildKit. Usually called internally by deploy. Supports --service for single build, --tag for custom tag (defaults to git SHA).',
-    {
-      service: z
-        .string()
-        .optional()
-        .describe('Build specific service only (optional)'),
-      env: z.string().optional().describe('Target environment (optional)'),
-      tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
-    },
     {
       title: 'Build Docker Images',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Build Docker images with BuildKit. Usually called internally by deploy. Supports --service for single build, --tag for custom tag (defaults to git SHA).',
+      inputSchema: {
+        service: z
+          .string()
+          .optional()
+          .describe('Build specific service only (optional)'),
+        env: z.string().optional().describe('Target environment (optional)'),
+        tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ service, env, tag }) => {
       const args = ['infra:build-docker'];

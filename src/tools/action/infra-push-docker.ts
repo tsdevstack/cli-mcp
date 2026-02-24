@@ -9,23 +9,26 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerInfraPushDockerTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'infra_push_docker',
-    'Push Docker images to registry. Usually called internally by deploy. Supports --service for single push.',
-    {
-      service: z
-        .string()
-        .optional()
-        .describe('Push specific service only (optional)'),
-      env: z.string().optional().describe('Target environment (optional)'),
-      tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
-    },
     {
       title: 'Push Docker Images',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        'Push Docker images to registry. Usually called internally by deploy. Supports --service for single push.',
+      inputSchema: {
+        service: z
+          .string()
+          .optional()
+          .describe('Push specific service only (optional)'),
+        env: z.string().optional().describe('Target environment (optional)'),
+        tag: z.string().optional().describe('Image tag (defaults to git SHA)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ service, env, tag }) => {
       const args = ['infra:push-docker'];

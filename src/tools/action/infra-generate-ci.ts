@@ -9,18 +9,20 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerInfraGenerateCiTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'infra_generate_ci',
-    'Regenerate CI workflows from ci.json.',
-    {
-      env: z.string().optional().describe('Target environment (optional)'),
-    },
     {
       title: 'Generate CI Workflows',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: 'Regenerate CI workflows from ci.json.',
+      inputSchema: {
+        env: z.string().optional().describe('Target environment (optional)'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ env }) => {
       const args = ['infra:generate-ci'];

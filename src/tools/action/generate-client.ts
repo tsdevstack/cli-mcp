@@ -9,18 +9,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
 export function registerGenerateClientTool(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'generate_client',
-    "Generate TypeScript HTTP client + DTOs from a service's OpenAPI spec. Other services import this for type-safe API calls.",
-    {
-      service: z.string().describe('Service name to generate client for'),
-    },
     {
       title: 'Generate Client',
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Generate TypeScript HTTP client + DTOs from a service's OpenAPI spec. Other services import this for type-safe API calls.",
+      inputSchema: {
+        service: z.string().describe('Service name to generate client for'),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async ({ service }) => runCommand(['generate-client', service]),
   );
