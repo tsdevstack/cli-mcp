@@ -5,7 +5,7 @@
  * Commands call getContext() to access utilities.
  */
 
-import type { PluginContext } from 'tsdevstack/plugin';
+import type { PluginContext } from '@tsdevstack/cli/plugin';
 
 let context: PluginContext;
 

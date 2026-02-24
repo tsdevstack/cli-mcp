@@ -9,6 +9,6 @@ export default defineConfig({
     },
   ],
   output: {
-    externals: ['tsdevstack', 'tsdevstack/plugin'],
+    externals: ['@tsdevstack/cli', '@tsdevstack/cli/plugin'],
   },
 });

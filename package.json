@@ -47,7 +47,7 @@
     "test:watch": "rstest --watch"
   },
   "peerDependencies": {
-    "tsdevstack": ">=0.1.0",
+    "@tsdevstack/cli": ">=0.1.0",
     "commander": "^12.0.0"
   },
   "dependencies": {
