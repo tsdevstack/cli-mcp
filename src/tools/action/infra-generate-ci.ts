@@ -4,7 +4,6 @@
  * Wraps `npx tsdevstack infra:generate-ci` to regenerate CI workflows.
  */
 
-import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
 
@@ -13,10 +12,8 @@ export function registerInfraGenerateCiTool(server: McpServer): void {
     'infra_generate_ci',
     {
       title: 'Generate CI Workflows',
-      description: 'Regenerate CI workflows from ci.json.',
-      inputSchema: {
-        env: z.string().optional().describe('Target environment (optional)'),
-      },
+      description:
+        'Regenerate CI workflows from ci.json. No credentials required.',
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -24,12 +21,6 @@ export function registerInfraGenerateCiTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ env }) => {
-      const args = ['infra:generate-ci'];
-      if (env) {
-        args.push('--env', env);
-      }
-      return runCommand(args);
-    },
+    async () => runCommand(['infra:generate-ci']),
   );
 }
