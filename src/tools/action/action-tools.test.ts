@@ -36,9 +36,11 @@ import { registerDeployServiceTool } from './deploy-service';
 import { registerDeploySchedulerTool } from './deploy-scheduler';
 import { registerRemoveSchedulerTool } from './remove-scheduler';
 import { registerValidateServiceTool } from './validate-service';
+import { registerAddBucketStorageTool } from './add-bucket-storage';
+import { registerRemoveBucketStorageTool } from './remove-bucket-storage';
 
 describe('Action tools registration', () => {
-  it('should register all 35 action tools without errors', () => {
+  it('should register all 37 action tools without errors', () => {
     const server = new McpServer({ name: 'test', version: '1.0.0' });
 
     expect(() => registerActionTools(server)).not.toThrow();
@@ -97,6 +99,18 @@ describe('Action tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerUnregisterDetachedWorkerTool(server)).not.toThrow();
+    });
+
+    it('should register add_bucket_storage tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerAddBucketStorageTool(server)).not.toThrow();
+    });
+
+    it('should register remove_bucket_storage tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerRemoveBucketStorageTool(server)).not.toThrow();
     });
   });
 

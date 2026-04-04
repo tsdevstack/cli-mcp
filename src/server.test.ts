@@ -36,7 +36,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(48);
+    expect(result.tools.length).toBe(53);
 
     await client.close();
     await server.close();

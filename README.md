@@ -1,10 +1,10 @@
 # @tsdevstack/cli-mcp
 
-MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 48 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
+MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 53 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
 
 ## Features
 
-- **48 MCP Tools** — 13 read-only queries + 35 actions covering the full tsdevstack CLI surface
+- **53 MCP Tools** — 13 read-only queries + 40 actions covering the full tsdevstack CLI surface
 - **12 MCP Resources** — project state, secrets context, Kong routes, and framework guides
 - **Stdio Transport** — connects via stdin/stdout for IDE and agent integration
 - **Zod Validation** — all tool inputs validated with schemas
@@ -88,6 +88,11 @@ Add to your `.mcp.json`:
 | `add_service`                | Add a new service (nestjs, nextjs, spa)      |
 | `remove_service`             | Remove a service from the project            |
 | `generate_client`            | Generate TypeScript HTTP client from OpenAPI |
+| `add_bucket_storage`         | Add an object storage bucket                 |
+| `remove_bucket_storage`      | Remove an object storage bucket              |
+| `add_messaging_topic`        | Add a messaging topic to config              |
+| `remove_messaging_topic`     | Remove a messaging topic from config         |
+| `update_messaging_topic`     | Update publishers/subscribers for a topic    |
 | `register_detached_worker`   | Register a detached worker in config         |
 | `unregister_detached_worker` | Remove a worker from config                  |
 

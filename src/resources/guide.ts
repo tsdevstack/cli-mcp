@@ -30,8 +30,11 @@ const GUIDE_CONTENT = `# tsdevstack Framework Guide
 
 ## Anti-Patterns (DO NOT DO THESE)
 - NEVER edit \`config.json\` directly to add services or workers — use \`add_service\` or \`register_detached_worker\`
+- NEVER edit \`config.json\` directly to add or remove storage buckets — use \`add_bucket_storage\` / \`remove_bucket_storage\`
+- NEVER edit \`config.json\` directly to add, remove, or update messaging topics — use \`add_messaging_topic\` / \`remove_messaging_topic\` / \`update_messaging_topic\`
 - NEVER edit files in \`infrastructure/terraform/\` or \`infrastructure/kong/\` — they're generated. Edit the generators in \`packages/cli-infra/src/utils/*/terraform-generate/\`
-- NEVER install npm packages for things nest-common already provides (Redis, auth guards, logging, rate limiting, observability, BullMQ config, service clients)
+- NEVER install npm packages for things nest-common already provides (Redis, auth guards, logging, rate limiting, observability, BullMQ config, service clients, **object storage**, **async messaging**)
+- NEVER install \`@aws-sdk/client-s3\`, \`@google-cloud/storage\`, or \`@azure/storage-blob\` directly — use nest-common's \`StorageModule\` which provides a unified \`StorageProvider\` interface across all providers
 - NEVER create a worker by copying service boilerplate — use \`register_detached_worker\` to add to config, then create \`worker.ts\` and \`worker.module.ts\` using nest-common's \`startWorker()\` wrapper
 - NEVER deploy a new service/worker with \`deploy_services\` — new services need \`infra_deploy\` (Terraform must create the container runtime first)
 - NEVER shell out to \`aws\`, \`gcloud\`, or \`az\` CLI tools in source code — use cloud provider SDKs. CLI tools are only available locally.
@@ -63,15 +66,39 @@ The framework has a documentation site with detailed guides. When deployed, refe
 - **Building APIs:** \`/building-apis/openapi-decorators\`, \`/building-apis/gateway-routing\`, \`/building-apis/dto-generation\`, \`/building-apis/swagger-docs\`
 - **Infrastructure:** \`/infrastructure/cicd-setup\`, \`/infrastructure/domain-setup\`, \`/infrastructure/environments\`, \`/infrastructure/service-configuration\`
 - **Observability:** \`/features/observability\`
+- **Object Storage:** \`/features/object-storage\`
+- **Async Messaging:** \`/features/async-messaging\`
 - **Customization:** \`/customization/kong-customization\`, \`/customization/docker-overrides\`, \`/customization/framework-files\`, \`/customization/escape-hatches\`
 - **Provider-specific:** \`/infrastructure/providers/gcp/\`, \`/infrastructure/providers/aws/\`, \`/infrastructure/providers/azure/\`
 
+## Object Storage
+- \`add_bucket_storage\` / \`remove_bucket_storage\` manage storage buckets in config.json
+- Locally: MinIO (S3-compatible) runs in Docker on ports 9000 (API) + 9001 (console). Auto-generated in docker-compose when any bucket exists.
+- NestJS: \`StorageModule.forRoot({ buckets: ['name'] })\` + \`@InjectStorage('name')\` → unified \`StorageProvider\` interface
+- StorageProvider methods: upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
+- Provider auto-detected from \`SECRETS_PROVIDER\`: \`local\`/\`aws\` → S3 adapter, \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter
+- Cloud: \`infra_deploy\` creates cloud buckets (S3/GCS/Azure Blob) via Terraform and syncs \`STORAGE_BUCKET_*\` secrets
+- STORAGE_* secrets are shared-scope (auto-assigned to ALL services via secret-map) — no need to manually assign them in \`.secrets.user.json\`
+- Azure also gets \`AZURE_STORAGE_ACCOUNT_NAME\` injected as an env var (not a secret)
+
+## Async Messaging
+- \`add_messaging_topic\` / \`remove_messaging_topic\` / \`update_messaging_topic\` manage messaging topics in config.json
+- Uses Redis Streams — same Redis instance as BullMQ and caching. No new infrastructure.
+- NestJS: \`MessagingModule.forRoot({ consumerGroup: 'service-name', topics: ['topic-name'] })\` + \`@OnMessage('topic-name')\` decorator
+- Publishing: inject \`MessagingService\` and call \`messaging.publish('topic-name', data)\`
+- Handler contract: return = XACK (acknowledged), throw = retry (stays pending), 3 failures = DLQ
+- Stream key format: \`{project}:messaging:{topicName}\`, consumer group: \`{project}:messaging:{topicName}:{serviceName}\`
+- **Messaging vs BullMQ:** Messaging = inter-service event broadcasting (pub/sub, every subscriber gets every message). BullMQ = intra-service job queues (one consumer per job). They complement each other.
+- \`update_messaging_topic\` uses **replace semantics** — pass the complete desired list of publishers/subscribers, not additions
+- No Terraform, no new secrets, no new env vars, no docker-compose changes
+
 ## Deployment Model
-- \`infra_deploy\` = full deploy (Terraform infra + build Docker + push + deploy all services + Kong + LB). Required for new services/workers.
+- \`infra_deploy\` = full deploy (Terraform infra + build Docker + push + deploy all services + Kong + LB + storage buckets). Required for new services/workers and new storage buckets.
 - \`deploy_services\` = code push only (build + push + deploy). For code updates to existing services. Supports \`--service\` for single service.
 - \`deploy_kong\` = rebuild and deploy Kong gateway. After changing routes/decorators.
 - \`deploy_lb\` = deploy/update load balancer. After changing domains.
 - New services/workers ALWAYS require \`infra_deploy\` because Terraform must create the container runtime.
+- New storage buckets require \`infra_deploy\` because Terraform must create the cloud bucket and sync \`STORAGE_BUCKET_*\` secrets.
 - Code updates to existing services: \`deploy_services\` is faster.`;
 
 export function registerGuideResource(server: McpServer): void {

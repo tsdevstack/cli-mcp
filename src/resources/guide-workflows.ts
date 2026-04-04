@@ -93,7 +93,7 @@ The project already exists (created via \`tsdevstack init\`). This is for deploy
 1. \`cloud_init --{provider}\` → checks local credentials + bootstraps the cloud project (enables APIs, creates roles, terraform state bucket)
 2. Configure \`infrastructure.json\` with environment settings (see "Create infrastructure.json" workflow above)
 3. \`cloud_secrets_push --env {env}\` → prompts for DOMAIN, RESEND_API_KEY, EMAIL_FROM; auto-generates framework secrets
-4. \`infra_deploy --env {env}\` → the big deploy: Terraform infra + build Docker + push + deploy all services + Kong + LB. This does everything.
+4. \`infra_deploy --env {env}\` → the big deploy: Terraform infra (VPC, DB, Redis, storage buckets) + build Docker + push + deploy all services + Kong + LB. This does everything, including creating cloud storage buckets and syncing \`STORAGE_BUCKET_*\` secrets.
 5. Set DNS records on domain registrar portal (from deploy output)
 6. \`deploy_schedulers --env {env}\` (can run in parallel with DNS setup)
 7. Check domain propagation: \`dig {domain}\` — wait for DNS to point to LB IP
@@ -191,7 +191,7 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
 ## "Start local development"
 1. \`npm install\` (if fresh clone)
 2. \`sync\` → generates all config: secrets, docker-compose, kong config, env files, secret-map
-3. Tell user to run \`npm run dev\` — this starts Docker Compose (PostgreSQL, Redis, Kong, pgAdmin, Prometheus, Grafana, Jaeger, Redis Commander) + all services in parallel via Lerna
+3. Tell user to run \`npm run dev\` — this starts Docker Compose (PostgreSQL, Redis, Kong, pgAdmin, Prometheus, Grafana, Jaeger, Redis Commander, and MinIO if storage buckets are configured) + all services in parallel via Lerna
 
 ### Local URLs
 | Service | URL | Purpose |
@@ -205,6 +205,8 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
 | Grafana | http://localhost:4001 | Dashboards (login: admin / admin) |
 | Jaeger | http://localhost:16686 | Distributed tracing UI |
 | Prisma Studio | http://localhost:5555 | Visual database editor (run \`cd apps/{service} && npx prisma studio\`) |
+| MinIO API | http://localhost:9000 | S3-compatible object storage (only if storage buckets configured) |
+| MinIO Console | http://localhost:9001 | Storage browser (login: minioadmin / minioadmin) |
 
 Backend services run on their configured ports (3001, 3002, 3003, etc.) — access them through Kong at \`:8000\` for authenticated requests, or directly for health/metrics.
 
@@ -224,6 +226,25 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\` — emails are logged to the
 - **Port in use**: \`lsof -i :{port}\` to find the process
 - **Kong 502**: Service not running — check \`docker compose ps\`, then \`sync\` + restart
 - **Missing secrets**: Run \`generate_secrets\` to regenerate all config files
+
+## "Add object storage to the project"
+1. \`add_bucket_storage\` with a logical name (kebab-case, 2-30 chars) → updates config.json, regenerates docker-compose (adds MinIO if first bucket), regenerates secrets (adds STORAGE_* entries)
+2. Tell user to restart Docker: \`docker compose up -d\` — MinIO starts on ports 9000 (API) + 9001 (console, login: minioadmin/minioadmin)
+3. In the NestJS service that needs storage:
+   - Import \`StorageModule.forRoot({ buckets: ['bucket-name'] })\` (or \`forRootAsync\` for dynamic config)
+   - Inject with \`@InjectStorage('bucket-name') private storage: StorageProvider\`
+   - Available methods: upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
+4. For cloud: \`infra_deploy --env {env}\` — Terraform creates the cloud bucket (S3/GCS/Azure Blob) and syncs \`STORAGE_BUCKET_*\` secrets to the cloud secret manager
+5. The storage adapter is auto-selected at runtime based on \`SECRETS_PROVIDER\`: local/aws → S3, gcp → GCS, azure → Azure Blob. No code changes needed between local and cloud.
+
+**Full reference:** See docs-site at \`/features/object-storage\` for API reference, bucket naming, secrets, and provider details.
+
+## "Remove object storage from the project"
+1. \`remove_bucket_storage\` with the bucket name → removes from config.json, regenerates docker-compose (removes MinIO if last bucket), regenerates secrets
+2. Local MinIO data is NOT deleted — it remains in Docker volumes
+3. For cloud cleanup: \`infra_deploy --env {env}\` removes the bucket from Terraform state. **WARNING: this deletes all data in the cloud bucket.** Back up first if needed.
+4. If this was the last bucket: manually remove \`StorageModule\` imports from NestJS code
+5. Cloud secrets (\`STORAGE_BUCKET_*\`) must be removed separately via \`cloud_secrets_remove\`
 
 ## "Add a custom secret to a service"
 1. Edit \`.secrets.user.json\`:

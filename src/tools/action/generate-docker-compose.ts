@@ -13,7 +13,7 @@ export function registerGenerateDockerComposeTool(server: McpServer): void {
     {
       title: 'Generate Docker Compose',
       description:
-        'Regenerate docker-compose.yml from current config. Run after adding services.',
+        'Regenerate docker-compose.yml from current config. Run after adding services or storage buckets. When storage buckets exist in config.json, includes MinIO (S3-compatible storage) on ports 9000 (API) + 9001 (console) with a minio-init job that auto-creates buckets.',
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,

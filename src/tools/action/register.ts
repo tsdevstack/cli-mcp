@@ -1,7 +1,7 @@
 /**
  * Register Action Tools
  *
- * Registers all 35 action tools (9 local + 12 cloud + 14 setup/CI/internal) with the MCP server.
+ * Registers all 40 action tools (14 local + 12 cloud + 14 setup/CI/internal) with the MCP server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -16,6 +16,11 @@ import { registerRemoveServiceTool } from './remove-service.js';
 import { registerGenerateClientTool } from './generate-client.js';
 import { registerRegisterDetachedWorkerTool } from './register-detached-worker.js';
 import { registerUnregisterDetachedWorkerTool } from './unregister-detached-worker.js';
+import { registerAddBucketStorageTool } from './add-bucket-storage.js';
+import { registerRemoveBucketStorageTool } from './remove-bucket-storage.js';
+import { registerAddMessagingTopicTool } from './add-messaging-topic.js';
+import { registerRemoveMessagingTopicTool } from './remove-messaging-topic.js';
+import { registerUpdateMessagingTopicTool } from './update-messaging-topic.js';
 
 // Cloud action tools
 import { registerCloudSecretsPushTool } from './cloud-secrets-push.js';
@@ -58,6 +63,11 @@ export function registerActionTools(server: McpServer): void {
   registerGenerateClientTool(server);
   registerRegisterDetachedWorkerTool(server);
   registerUnregisterDetachedWorkerTool(server);
+  registerAddBucketStorageTool(server);
+  registerRemoveBucketStorageTool(server);
+  registerAddMessagingTopicTool(server);
+  registerRemoveMessagingTopicTool(server);
+  registerUpdateMessagingTopicTool(server);
 
   // Cloud action tools (higher risk)
   registerCloudSecretsPushTool(server);
