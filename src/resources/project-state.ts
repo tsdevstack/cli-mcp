@@ -6,20 +6,11 @@
  * tsdevstack://infrastructure-schema, tsdevstack://ci
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-
-function readProjectFile(relativePath: string): string | null {
-  try {
-    return readFileSync(join(process.cwd(), relativePath), 'utf-8');
-  } catch {
-    return null;
-  }
-}
+import { readProjectFile } from './read-project-file.js';
 
 export function registerProjectStateResources(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'config',
     'tsdevstack://config',
     {
@@ -42,7 +33,7 @@ export function registerProjectStateResources(server: McpServer): void {
     },
   );
 
-  server.resource(
+  server.registerResource(
     'infrastructure',
     'tsdevstack://infrastructure',
     {
@@ -65,7 +56,7 @@ export function registerProjectStateResources(server: McpServer): void {
     },
   );
 
-  server.resource(
+  server.registerResource(
     'infrastructure-schema',
     'tsdevstack://infrastructure-schema',
     {
@@ -88,7 +79,7 @@ export function registerProjectStateResources(server: McpServer): void {
     },
   );
 
-  server.resource(
+  server.registerResource(
     'ci',
     'tsdevstack://ci',
     {

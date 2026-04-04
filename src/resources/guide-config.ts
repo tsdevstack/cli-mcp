@@ -122,7 +122,7 @@ Merged output of \`.secrets.tsdevstack.json\` + \`.secrets.user.json\`. Injected
 | \`.secrets.user.json\` | \`.secrets.tsdevstack.json\` | Your secrets and assignments |`;
 
 export function registerGuideConfigResource(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'guide-config',
     'tsdevstack://guide/config',
     {

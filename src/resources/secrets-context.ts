@@ -6,20 +6,11 @@
  * tsdevstack://secrets/user
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-
-function readProjectFile(relativePath: string): string | null {
-  try {
-    return readFileSync(join(process.cwd(), relativePath), 'utf-8');
-  } catch {
-    return null;
-  }
-}
+import { readProjectFile } from './read-project-file.js';
 
 export function registerSecretsContextResources(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'secrets-map',
     'tsdevstack://secrets/map',
     {
@@ -42,7 +33,7 @@ export function registerSecretsContextResources(server: McpServer): void {
     },
   );
 
-  server.resource(
+  server.registerResource(
     'secrets-names',
     'tsdevstack://secrets/names',
     {
@@ -65,7 +56,7 @@ export function registerSecretsContextResources(server: McpServer): void {
     },
   );
 
-  server.resource(
+  server.registerResource(
     'secrets-user',
     'tsdevstack://secrets/user',
     {

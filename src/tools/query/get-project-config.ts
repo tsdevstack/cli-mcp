@@ -27,13 +27,13 @@ export function registerGetProjectConfigTool(server: McpServer): void {
         const configPath = join(process.cwd(), '.tsdevstack', 'config.json');
         const content = readFileSync(configPath, 'utf-8');
         return {
-          content: [{ type: 'text' as const, text: content }],
+          content: [{ type: 'text', text: content }],
         };
       } catch {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'config.json not found. Run `npx tsdevstack init` to create a project.',
             },
           ],

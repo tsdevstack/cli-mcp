@@ -31,7 +31,7 @@ export function registerListServicesTool(server: McpServer): void {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(config.services, null, 2),
             },
           ],
@@ -40,7 +40,7 @@ export function registerListServicesTool(server: McpServer): void {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'config.json not found. Run `npx tsdevstack init` to create a project.',
             },
           ],

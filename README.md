@@ -1,10 +1,10 @@
 # @tsdevstack/cli-mcp
 
-MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 53 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
+MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 54 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
 
 ## Features
 
-- **53 MCP Tools** — 13 read-only queries + 40 actions covering the full tsdevstack CLI surface
+- **54 MCP Tools** — 13 read-only queries + 41 actions covering the full tsdevstack CLI surface
 - **12 MCP Resources** — project state, secrets context, Kong routes, and framework guides
 - **Stdio Transport** — connects via stdin/stdout for IDE and agent integration
 - **Zod Validation** — all tool inputs validated with schemas
@@ -126,6 +126,7 @@ Add to your `.mcp.json`:
 | `infra_generate_docker` | Generate Dockerfiles                  |
 | `infra_build_docker`    | Build Docker images                   |
 | `infra_push_docker`     | Push Docker images to registry        |
+| `infra_generate_kong`   | Generate Kong declarative config      |
 | `infra_build_kong`      | Build Kong Docker image               |
 | `infra_init_ci`         | Initialize CI/CD workflows            |
 | `infra_generate_ci`     | Regenerate CI workflows               |

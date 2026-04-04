@@ -38,7 +38,7 @@ export function registerListEnvironmentsTool(server: McpServer): void {
           return {
             content: [
               {
-                type: 'text' as const,
+                type: 'text',
                 text: 'No cloud environments configured. Run `npx tsdevstack cloud:init --gcp|--aws|--azure` to initialize a provider.',
               },
             ],
@@ -65,7 +65,7 @@ export function registerListEnvironmentsTool(server: McpServer): void {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: JSON.stringify(environments, null, 2),
             },
           ],
@@ -74,7 +74,7 @@ export function registerListEnvironmentsTool(server: McpServer): void {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'Could not read credential files. Ensure .tsdevstack/ directory exists.',
             },
           ],

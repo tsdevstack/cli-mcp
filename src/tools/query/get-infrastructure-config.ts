@@ -31,13 +31,13 @@ export function registerGetInfrastructureConfigTool(server: McpServer): void {
         );
         const content = readFileSync(configPath, 'utf-8');
         return {
-          content: [{ type: 'text' as const, text: content }],
+          content: [{ type: 'text', text: content }],
         };
       } catch {
         return {
           content: [
             {
-              type: 'text' as const,
+              type: 'text',
               text: 'infrastructure.json not found. This is a user-created file — see the guide/config resource for how to create it.',
             },
           ],

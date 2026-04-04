@@ -25,7 +25,7 @@ describe('createServer', () => {
 });
 
 describe('Integration: tools/list', () => {
-  it('should list all 48 tools', async () => {
+  it('should list all 54 tools', async () => {
     const server = createServer();
     const client = new Client({ name: 'test-client', version: '1.0.0' });
     const [clientTransport, serverTransport] =
@@ -36,7 +36,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(53);
+    expect(result.tools.length).toBe(54);
 
     await client.close();
     await server.close();

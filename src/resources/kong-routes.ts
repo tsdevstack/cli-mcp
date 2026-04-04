@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export function registerKongRoutesResource(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'kong-routes',
     'tsdevstack://kong/routes',
     {

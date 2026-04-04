@@ -29,6 +29,7 @@ import { registerInfraGenerateTool } from './infra-generate';
 import { registerInfraGenerateDockerTool } from './infra-generate-docker';
 import { registerInfraBuildDockerTool } from './infra-build-docker';
 import { registerInfraPushDockerTool } from './infra-push-docker';
+import { registerInfraGenerateKongTool } from './infra-generate-kong';
 import { registerInfraBuildKongTool } from './infra-build-kong';
 import { registerInfraInitCiTool } from './infra-init-ci';
 import { registerInfraGenerateCiTool } from './infra-generate-ci';
@@ -40,7 +41,7 @@ import { registerAddBucketStorageTool } from './add-bucket-storage';
 import { registerRemoveBucketStorageTool } from './remove-bucket-storage';
 
 describe('Action tools registration', () => {
-  it('should register all 37 action tools without errors', () => {
+  it('should register all 41 action tools without errors', () => {
     const server = new McpServer({ name: 'test', version: '1.0.0' });
 
     expect(() => registerActionTools(server)).not.toThrow();
@@ -229,6 +230,12 @@ describe('Action tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerInfraPushDockerTool(server)).not.toThrow();
+    });
+
+    it('should register infra_generate_kong tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerInfraGenerateKongTool(server)).not.toThrow();
     });
 
     it('should register infra_build_kong tool', () => {

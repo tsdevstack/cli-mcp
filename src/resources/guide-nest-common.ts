@@ -108,7 +108,7 @@ Generates OpenAPI spec without starting the server. Used internally by CLI comma
 Not typically called by user code, but important to know it exists — this is why OpenAPI decorators drive everything.`;
 
 export function registerGuideNestCommonResource(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'guide-nest-common',
     'tsdevstack://guide/nest-common',
     {

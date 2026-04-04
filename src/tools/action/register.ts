@@ -1,7 +1,7 @@
 /**
  * Register Action Tools
  *
- * Registers all 40 action tools (14 local + 12 cloud + 14 setup/CI/internal) with the MCP server.
+ * Registers all 41 action tools (14 local + 12 cloud + 15 setup/CI/internal) with the MCP server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -44,6 +44,7 @@ import { registerInfraGenerateTool } from './infra-generate.js';
 import { registerInfraGenerateDockerTool } from './infra-generate-docker.js';
 import { registerInfraBuildDockerTool } from './infra-build-docker.js';
 import { registerInfraPushDockerTool } from './infra-push-docker.js';
+import { registerInfraGenerateKongTool } from './infra-generate-kong.js';
 import { registerInfraBuildKongTool } from './infra-build-kong.js';
 import { registerInfraInitCiTool } from './infra-init-ci.js';
 import { registerInfraGenerateCiTool } from './infra-generate-ci.js';
@@ -91,6 +92,7 @@ export function registerActionTools(server: McpServer): void {
   registerInfraGenerateDockerTool(server);
   registerInfraBuildDockerTool(server);
   registerInfraPushDockerTool(server);
+  registerInfraGenerateKongTool(server);
   registerInfraBuildKongTool(server);
   registerInfraInitCiTool(server);
   registerInfraGenerateCiTool(server);

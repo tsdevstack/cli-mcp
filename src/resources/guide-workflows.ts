@@ -275,7 +275,7 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\` — emails are logged to the
 2. For cloud removal: \`remove_detached_worker --env {env} --worker {name}\` (deletes container — PERMANENT)`;
 
 export function registerGuideWorkflowsResource(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'guide-workflows',
     'tsdevstack://guide/workflows',
     {

@@ -102,7 +102,7 @@ The framework has a documentation site with detailed guides. When deployed, refe
 - Code updates to existing services: \`deploy_services\` is faster.`;
 
 export function registerGuideResource(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'guide',
     'tsdevstack://guide',
     {
