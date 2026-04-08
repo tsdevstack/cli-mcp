@@ -150,6 +150,10 @@ The MCP server is a thin layer over the tsdevstack CLI:
 - **Action tools** delegate to `runCommand()` which spawns `npx tsdevstack <command>` as a child process
 - **Resources** read project files and provide contextual documentation
 
+## Community
+
+Join the Discord: [discord.gg/2EMFkqc8QR](https://discord.gg/2EMFkqc8QR)
+
 ## License
 
 MIT
