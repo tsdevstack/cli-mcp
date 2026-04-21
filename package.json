@@ -1,6 +1,6 @@
 {
   "name": "@tsdevstack/cli-mcp",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP server for tsdevstack CLI - exposes tools and resources to AI agents",
   "author": "tsdevstack",
   "private": false,
@@ -59,7 +59,7 @@
     "@rslib/core": "^0.19.6",
     "@rstest/adapter-rslib": "^0.2.0",
     "@rstest/core": "^0.8.5",
-    "@types/node": "^24.10.13",
+    "@types/node": "^22.19.17",
     "eslint": "^9.39.2",
     "globals": "^17.3.0",
     "prettier": "^3.8.1",
