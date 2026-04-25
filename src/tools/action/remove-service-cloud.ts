@@ -13,8 +13,9 @@ export function registerRemoveServiceCloudTool(server: McpServer): void {
     'remove_service_cloud',
     {
       title: 'Remove Service (Cloud)',
-      description:
-        'Remove a service from cloud (deletes container, secrets, database). Cannot be undone. Data is permanently lost.',
+      description: `Remove a service from cloud (deletes container, secrets, database). Cannot be undone. Data is permanently lost.
+
+Follow-up (suggest to the user): if the removed service was a backend (nestjs), Kong still holds stale routes pointing to the deleted service. Run deploy_kong with the same env afterward to regenerate and redeploy the gateway so those routes are cleared.`,
       inputSchema: {
         service: z.string().describe('Service name to remove from cloud'),
         env: z.string().describe('Target environment (dev, staging, prod)'),
