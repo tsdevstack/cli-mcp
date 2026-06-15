@@ -156,4 +156,4 @@ Join the Discord: [discord.gg/2EMFkqc8QR](https://discord.gg/2EMFkqc8QR)
 
 ## License
 
-MIT
+Apache-2.0

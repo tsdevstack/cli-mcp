@@ -1,10 +1,10 @@
 {
   "name": "@tsdevstack/cli-mcp",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "MCP server for tsdevstack CLI - exposes tools and resources to AI agents",
   "author": "tsdevstack",
   "private": false,
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/tsdevstack/cli-mcp.git"
@@ -35,7 +35,8 @@
   },
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "NOTICE"
   ],
   "scripts": {
     "build": "rslib build",
