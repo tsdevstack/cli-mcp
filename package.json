@@ -1,6 +1,6 @@
 {
   "name": "@tsdevstack/cli-mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "MCP server for tsdevstack CLI - exposes tools and resources to AI agents",
   "author": "tsdevstack",
   "private": false,
@@ -24,7 +24,7 @@
     "cli"
   ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "type": "module",
   "exports": {
@@ -49,19 +49,19 @@
   },
   "peerDependencies": {
     "@tsdevstack/cli": ">=0.1.0",
-    "commander": "^12.0.0"
+    "commander": "^15.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.25.67"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@rslib/core": "^0.23.2",
-    "@rstest/adapter-rslib": "^0.2.0",
-    "@rstest/core": "^0.8.5",
+    "@rstest/adapter-rslib": "^0.11.4",
+    "@rstest/core": "^0.11.4",
     "@types/node": "^22.19.17",
-    "eslint": "^9.39.2",
+    "eslint": "^10.7.0",
     "globals": "^17.3.0",
     "prettier": "^3.8.1",
     "typescript": "^6.0.0",
