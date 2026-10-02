@@ -1,20 +1,13 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export default [
   {
     languageOptions: {
       globals: globals.node,
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: __dirname,
-      },
+      // No parserOptions.project: no rule here needs type information, and
+      // building it took 2 to 3 GB per lint run (out of memory on CI).
     },
   },
   js.configs.recommended,

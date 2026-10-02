@@ -14,7 +14,7 @@ export function registerDeployKongTool(server: McpServer): void {
     {
       title: 'Deploy Kong',
       description:
-        'Rebuild and deploy Kong gateway. Run after changing routes (adding endpoints, changing auth decorators).',
+        'Deploy an already built Kong gateway image (tag defaults to the git SHA). It does not regenerate routes or build the image: after changing routes or kong-plugins/, run infra_generate_kong and infra_build_kong first.',
       inputSchema: {
         env: z.string().describe('Target environment (dev, staging, prod)'),
       },

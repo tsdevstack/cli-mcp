@@ -37,11 +37,12 @@ Workers run as separate containers sharing their base service's Docker image.
 No CLI command needed — this is code:
 1. Add method to NestJS controller
 2. Add OpenAPI decorators: \`@ApiOperation({ summary: '...' })\`, \`@ApiResponse({ ... })\`
-3. For authentication: add \`@ApiBearerAuth()\` + \`@UseGuards(AuthGuard)\`
-4. For partner API access: add \`@PartnerApi()\` (can combine with \`@ApiBearerAuth()\` for dual access)
-5. For public endpoints: add \`@Public()\` decorator (or just don't add auth decorators)
-6. \`generate_kong\` → regenerates gateway routes from OpenAPI spec
+3. For authentication: add \`@ApiBearerAuth()\` (the backend \`AuthGuard\` is global, no \`@UseGuards\` needed). To restrict by role, add \`@Roles('ADMIN')\` (or a custom role).
+4. For partner API access: add \`@PartnerApi()\` (can combine with \`@ApiBearerAuth()\` for dual access). Only this operation gets a partner route (\`/api\` + its path).
+5. For public endpoints: add \`@Public()\` and no \`@ApiBearerAuth()\` (without \`@Public()\` the backend answers 401)
+6. \`sync\` (or \`npm run docs:generate\` then \`generate_kong\`) → regenerates the OpenAPI spec and the gateway routes. Kong routes only exact paths and methods from the spec; until you regenerate, the new endpoint is 404 at the gateway.
 7. \`generate_client\` → regenerates TypeScript client so other services have the new endpoint typed
+8. For cloud: \`deploy_services\`, then \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\` (commit the regenerated \`infrastructure/kong/{env}/kong.yml\`)
 
 ## "Add a secret to a service"
 1. Read \`tsdevstack://secrets/map\` to see current assignments
@@ -71,7 +72,7 @@ Only \`nextjs\` and \`spa\` apps can have domains. Backend services are NOT publ
 
 ## "Create infrastructure.json for a new environment"
 This file is user-created — the framework does NOT generate it. Only create it if needed (e.g., to override defaults).
-Most projects WILL need this because \`minInstances: 0\` (scale to zero) is a common non-prod setting that saves costs.
+Most projects on GCP or Azure WILL need this because \`minInstances: 0\` (scale to zero) is a common non-prod setting that saves costs. AWS does not support scale to zero: \`minInstances: 0\` fails validation on AWS for services and Kong, so AWS environments use 1 or more.
 1. Read \`tsdevstack://config\` to get the list of services
 2. Read \`tsdevstack://infrastructure-schema\` to know valid fields and values (only available after \`infra_init\`)
 3. Create \`.tsdevstack/infrastructure.json\` with:
@@ -82,24 +83,26 @@ Most projects WILL need this because \`minInstances: 0\` (scale to zero) is a co
      - \`database\` settings (tier, deletionProtection, etc.)
      - \`redis\` settings (tier, memoryGb)
      - \`kong\` settings (minInstances, maxInstances, cpu, memory)
-     - \`accessControl\` (protected, noIndex)
+     - \`accessControl\` (noIndex)
      - \`loadBalancer\` (apiDomain, redirectDomains) — if domains are configured
      - \`scheduledJobs\` array — if cron jobs exist
 4. For additional environments (staging, prod), add sibling keys with appropriate values
-5. **Advise users:** Non-prod environments should typically use \`minInstances: 0\` (scale to zero) to save costs. Prod should have \`minInstances: 1\` or higher for availability.
+5. **Advise users:** On GCP and Azure, non-prod environments can use \`minInstances: 0\` (scale to zero) to save costs. On AWS every service and Kong needs \`minInstances: 1\` or more (no scale to zero); lower AWS dev cost with smaller \`cpu\`/\`memory\` instead. Prod should have \`minInstances: 1\` or higher for availability.
 
 ## "Set up a new cloud environment (first deploy)"
 The project already exists (created via \`tsdevstack init\`). This is for deploying to a new environment.
 1. \`cloud_init --{provider}\` → checks local credentials + bootstraps the cloud project (enables APIs, creates roles, terraform state bucket)
 2. Configure \`infrastructure.json\` with environment settings (see "Create infrastructure.json" workflow above)
-3. \`cloud_secrets_push --env {env}\` → prompts for DOMAIN, RESEND_API_KEY, EMAIL_FROM; auto-generates framework secrets
+3. \`cloud_secrets_push --env {env}\` → prompts for DOMAIN, RESEND_API_KEY, EMAIL_FROM (and \`ADMIN_EMAILS\` for the auth template when set locally); auto-generates framework secrets
 4. \`infra_deploy --env {env}\` → the big deploy: Terraform infra (VPC, DB, Redis, storage buckets) + build Docker + push + deploy all services + Kong + LB. This does everything, including creating cloud storage buckets and syncing \`STORAGE_BUCKET_*\` secrets.
 5. Set DNS records on domain registrar portal (from deploy output)
 6. \`deploy_schedulers --env {env}\` (can run in parallel with DNS setup)
 7. Check domain propagation: \`dig {domain}\` — wait for DNS to point to LB IP
 8. \`list_deployed_services --env {env}\` → verify everything is running
 
-**Step-by-step alternative:** If the user wants more control, they can run individual steps: \`infra_generate\` → \`infra_plan\` → review → \`infra_deploy\` → \`deploy_kong\` → \`deploy_lb\` → \`deploy_schedulers\`.
+**Step-by-step alternative:** If the user wants more control, they can run individual steps: \`infra_generate\` → \`infra_plan\` → review → \`infra_deploy\` → \`deploy_schedulers\`. (\`infra_deploy\` already includes Kong and the load balancer; run \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\` or \`deploy_lb\` separately only after later changes.)
+
+**First admin (auth template):** set \`ADMIN_EMAILS\` in the auth-service scope (\`cloud_secrets_set ADMIN_EMAILS --service auth-service --env {env}\`); a confirmed user listed there becomes ADMIN at their next login. Roles are then managed through the auth service's admin API (\`/auth/v1/admin/users\`).
 
 ## "Deploy to a cloud environment (subsequent deploys)"
 1. \`infra_plan --env {env}\` → preview infrastructure changes (always do this first)
@@ -112,7 +115,18 @@ The project already exists (created via \`tsdevstack init\`). This is for deploy
 2. Or for single service: \`deploy_services --env {env} --service {name}\`
 
 ## "Update Kong routes after API changes"
-1. \`deploy_kong --env {env}\` → rebuild and deploy Kong with new routes
+1. \`infra_generate_kong --env {env}\` → regenerates \`infrastructure/kong/{env}/kong.yml\` from the OpenAPI specs and \`kong.user.yml\` (commit it)
+2. \`infra_build_kong --env {env}\` → builds and pushes the Kong image (includes \`kong-plugins/\`)
+3. \`deploy_kong --env {env}\` → deploys the built image (alone, it does not pick up new routes or plugins)
+
+The same three steps apply after editing \`kong.user.yml\`, adding a plugin to \`kong-plugins/\`, or upgrading the CLI.
+
+## "Add a custom Kong plugin"
+1. User creates \`kong-plugins/{plugin-name}/handler.lua\` and \`schema.lua\` at the project root (folder name = plugin name: lowercase letters, digits, \`-\`, \`_\`; must not reuse a bundled, OIDC or tsdevstack plugin name)
+2. Enable it in \`kong.user.yml\` (global, per service or per consumer)
+3. \`sync\` → rebuilds the local gateway image with the plugin
+4. For cloud: \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\`
+Never edit \`infrastructure/kong/Dockerfile\`: it's generated.
 
 ## "Check what's deployed"
 1. \`list_deployed_services --env {env}\` → all services with status
@@ -125,16 +139,24 @@ The project already exists (created via \`tsdevstack init\`). This is for deploy
 
 ## "Debug a 404 on an API endpoint"
 1. Read \`tsdevstack://kong/routes\` — does the route exist in Kong config?
-2. If missing: check OpenAPI decorators on the controller method → \`generate_kong\`
-3. If present in Kong but still 404: check the service's \`globalPrefix\` in config.json
-4. If cloud: \`deploy_kong --env {env}\` to push updated routes
+2. If missing: check OpenAPI decorators on the controller method (and that it isn't excluded from OpenAPI) → \`npm run docs:generate\` → \`generate_kong\`
+3. If present in Kong but still 404: routes are exact. Check the method, trailing slash, extra path segments, and the service's \`globalPrefix\` in config.json. Partner (\`/api/...\`) routes exist only for \`@PartnerApi()\` operations.
+4. If cloud: \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\` to push updated routes
+
+## "Issue an API key to a partner"
+Keys are runtime data behind the auth service API; there is no MCP tool and nothing to regenerate.
+1. The endpoint needs \`@PartnerApi()\` (see "Add an API endpoint"); partners call it at \`/api\` + its path with \`x-api-key\`
+2. An admin (\`ADMIN_EMAILS\`, see "Set up a new cloud environment") calls \`POST /auth/v1/admin/api-keys\` with a JWT: \`{ name, consumer, limitPerMinute?, limitPerHour?, limitPerDay?, limitPerWeek?, limitPerMonth?, expiresAt? }\`. The response contains \`key\` once; hand it over securely
+3. Change limits or expiry: \`PATCH /auth/v1/admin/api-keys/:id\` (\`null\` clears). Rotate: \`POST .../:id/rotate\` (\`graceHours\`, default 168). Revoke: \`POST .../:id/revoke\`. All effective on the next request
+4. Every cloud environment needs the \`sync-api-key-usage\` scheduled job (see "Add a scheduled job"; \`infra:generate\` prints the entry)
+Never add \`consumers\` to \`kong.user.yml\` or partner keys to secrets: static keys were removed. Gateway errors: 401 \`api_key_missing\`/\`invalid_api_key\`/\`api_key_revoked\`/\`api_key_expired\`, 429 \`rate_limit_exceeded\`/\`quota_exceeded\`, 503 \`index_unavailable\` (Redis lost the index: call the job or restart the auth service) / \`gateway_unavailable\` (Redis unreachable).
 
 ## "Add a scheduled job"
 Scheduled jobs are cron triggers that call service endpoints over HTTPS. They don't execute code directly — they trigger an HTTP endpoint on an existing service. The service must be deployed before the scheduler can be deployed.
 1. Create the endpoint in the target NestJS service:
    - Add a controller method (e.g., \`@Post('jobs/cleanup-tokens')\`)
-   - Add \`@UseGuards(SchedulerGuard)\` from nest-common (validates requests come from the cloud scheduler)
-   - Add OpenAPI decorators as usual
+   - Add \`@Public()\` and \`@UseGuards(SchedulerGuard)\` from nest-common (the scheduler calls the service directly, not through Kong; \`SchedulerGuard\` validates requests come from the cloud scheduler)
+   - Keep it out of the gateway with \`@ApiExcludeController()\` / \`@ApiExcludeEndpoint()\` (as the auth service's jobs controller does)
 2. Deploy the service so the endpoint exists in cloud
 3. Add the job to \`infrastructure.json\` under the environment's \`scheduledJobs\` array:
    \`\`\`json
@@ -150,6 +172,8 @@ Scheduled jobs are cron triggers that call service endpoints over HTTPS. They do
 4. \`deploy_schedulers --env {env}\` (or \`deploy_scheduler --env {env} --scheduler cleanup-tokens\`)
 
 **Important:** Services must be deployed before schedulers. Schedulers only make HTTPS calls — they don't run code or access databases directly.
+
+**Auth template:** every environment needs \`{"name":"sync-api-key-usage","schedule":"*/5 * * * *","targetService":"auth-service","endpoint":"/auth/jobs/sync-api-key-usage","method":"POST"}\` (API key usage totals and the Redis key index rebuild). \`infra_generate\` warns and prints the entry when it is missing.
 
 ## "Change the database schema (Prisma)"
 Prisma commands are run directly — no framework wrapper locally.
@@ -181,16 +205,16 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
    - **GCP:** \`GCP_WIF_{ENV}\`, \`GCP_SA_{ENV}\`, \`GCP_REGION_{ENV}\`
    - **AWS:** \`AWS_ROLE_ARN_{ENV}\`, \`AWS_REGION_{ENV}\`
    - **Azure:** \`AZURE_CLIENT_ID_{ENV}\`, \`AZURE_TENANT_ID_{ENV}\`, \`AZURE_SUBSCRIPTION_ID_{ENV}\`, \`AZURE_LOCATION_{ENV}\`
-3. \`cloud_secrets_push --env {env}\` BEFORE first CI deploy (DOMAIN, RESEND_API_KEY, EMAIL_FROM + framework secrets)
+3. \`cloud_secrets_push --env {env}\` BEFORE first CI deploy (DOMAIN, RESEND_API_KEY, EMAIL_FROM, ADMIN_EMAILS for the auth template + framework secrets)
 4. Workflows are triggered by users on GitHub Actions UI — nice env/service selection available
 5. PR workflow runs automatically on PRs against main (build, lint, tsc, test)
 6. To add a new environment: update \`ci.json\` environments array → \`infra_generate_ci\` → add GitHub secrets → push cloud secrets → deploy
 
-**CLI vs CI/CD:** Both can co-exist and either can manage everything independently. If a user wants CI-only deployments (no local CLI for cloud operations), they still need to set user secrets (DOMAIN, RESEND_API_KEY, EMAIL_FROM) manually via \`cloud_secrets_set\` with the correct naming — the CI workflow handles framework secrets but can't prompt for user values.
+**CLI vs CI/CD:** Both can co-exist and either can manage everything independently. If a user wants CI-only deployments (no local CLI for cloud operations), they still need to set user secrets (DOMAIN, RESEND_API_KEY, EMAIL_FROM, and \`ADMIN_EMAILS\` with \`--service auth-service\`) manually via \`cloud_secrets_set\` with the correct naming — the CI workflow handles framework secrets but can't prompt for user values.
 
 ## "Start local development"
 1. \`npm install\` (if fresh clone)
-2. \`sync\` → generates all config: secrets, docker-compose, kong config, env files, secret-map
+2. \`sync\` → generates all config: secrets, docker-compose, kong config, the Kong image build files, env files, secret-map (required on a fresh clone before \`docker compose up\`)
 3. Tell user to run \`npm run dev\` — this starts Docker Compose (PostgreSQL, Redis, Kong, pgAdmin, Prometheus, Grafana, Jaeger, Redis Commander, and MinIO if storage buckets are configured) + all services in parallel via Lerna
 
 ### Local URLs
@@ -225,6 +249,9 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\` — emails are logged to the
 ### Common issues
 - **Port in use**: \`lsof -i :{port}\` to find the process
 - **Kong 502**: Service not running — check \`docker compose ps\`, then \`sync\` + restart
+- **Kong fails to start after a CLI upgrade**: the config uses tsdevstack plugins (\`tsdevstack-strip-identity\`, \`tsdevstack-api-prefix\`) that the old gateway image doesn't have. \`sync\` (or \`docker compose up -d --build gateway\`) rebuilds it
+- **401 calling a backend directly** (\`localhost:300x\`) with a user header: expected, backends only trust identity from Kong. Call through \`:8000\` with a JWT
+- **First admin locally**: set \`ADMIN_EMAILS\` in \`.secrets.user.json\`, \`generate_secrets\`, restart the auth service, then log in with that confirmed email
 - **Missing secrets**: Run \`generate_secrets\` to regenerate all config files
 
 ## "Add object storage to the project"

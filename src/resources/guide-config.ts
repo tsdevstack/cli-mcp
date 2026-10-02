@@ -17,7 +17,7 @@ Main project configuration. Source of truth for services.
 
 Structure:
 - \`project\` — name, version, description
-- \`framework\` — version, packageScope (@tsdevstack), template
+- \`framework\`: version, packageScope (@tsdevstack), template; optional \`apiKeys.ipLimitPerMinute\` (per-IP ceiling on partner API routes, positive integer, default 600; the one setting users edit by hand, then regenerate Kong)
 - \`cloud.provider\` — active cloud provider (gcp, aws, azure)
 - \`services[]\` — all services and workers:
   - NestJS: \`{ name, type: "nestjs", port, globalPrefix, hasDatabase?, databaseType? }\`
@@ -42,7 +42,7 @@ Per-environment infrastructure settings. **This is a user-created file** — NOT
   "$schema": "./infrastructure.schema.json",
   "version": "1.0.0",
   "dev": {
-    "accessControl": { "protected": true, "noIndex": true },
+    "accessControl": { "noIndex": true },
     "auth-service": { "minInstances": 0, "maxInstances": 5, "cpu": "1", "memory": "512Mi" },
     "frontend": { "domain": "example.com", "minInstances": 0, "maxInstances": 5, "cpu": "1", "memory": "512Mi" },
     "kong": { "minInstances": 0, "maxInstances": 5, "cpu": "1", "memory": "1Gi" },
@@ -58,6 +58,8 @@ Per-environment infrastructure settings. **This is a user-created file** — NOT
 - Top-level keys after version are environment names: \`dev\`, \`staging\`, \`prod\`
 - Within each env: named service overrides + \`database\`, \`redis\`, \`kong\`, \`loadBalancer\`, \`accessControl\`, \`security\`, \`scheduledJobs\`
 - Service names must match services in \`config.json\`
+- **\`minInstances: 0\` (scale to zero) works on GCP and Azure only.** On AWS every service and \`kong\` needs \`minInstances\` of 1 or more; \`0\` fails \`infra:generate\`, \`infra:plan\`, \`infra:deploy\` and \`infra:status\` with a hint (the AWS schema has \`minimum: 1\`). The example above is a GCP/Azure dev setup.
+- \`kong.maxUploadSize\` sets the gateway's request body limit in the cloud (default \`"10m"\`); locally there is no limit
 
 ### Valid values
 Read \`infrastructure.schema.json\` for the definitive list. Key values:
@@ -68,7 +70,6 @@ Read \`infrastructure.schema.json\` for the definitive list. Key values:
 - Provider-specific values differ — check the schema or provider override files
 
 ### Access control & security
-- **\`accessControl.protected\`** — Restricts access (e.g., IP allowlist). Common for non-prod environments to prevent public access.
 - **\`accessControl.noIndex\`** — Adds \`X-Robots-Tag: noindex, nofollow\` header to all responses. Use on non-prod to prevent search engine indexing.
 - **\`security.waf.customRules\`** — Custom Cloud Armor WAF rules for rate limiting, IP blocking, or traffic filtering. Each rule has a \`name\`, \`priority\` (use 800-899 for custom), \`action\` (\`allow\`, \`deny(403)\`, \`deny(404)\`, \`deny(429)\`, \`throttle\`), and a CEL \`expression\`. For \`throttle\` actions, add \`rateLimit: { count, intervalSec }\`. Read the schema for full options.
 
@@ -93,7 +94,7 @@ Cloud provider credentials per environment. Created by \`cloud:init\`. Contains 
 User-defined secrets and service assignments. This is the file users edit.
 
 Structure:
-- \`secrets\` — key-value pairs for custom secrets (DOMAIN, RESEND_API_KEY, etc.)
+- \`secrets\` — key-value pairs for custom secrets (DOMAIN, RESEND_API_KEY, etc.). With the auth template it also has \`ADMIN_EMAILS\` (comma-separated; a confirmed user listed there becomes ADMIN at login; scoped to the auth service, and in the cloud stored in the auth-service scope)
 - Per-service entries with \`secrets\` array listing which keys that service needs
 
 ## \`.secrets.tsdevstack.json\` (gitignored, auto-generated)
@@ -112,12 +113,15 @@ Merged output of \`.secrets.tsdevstack.json\` + \`.secrets.user.json\`. Injected
 | \`.secrets.local.json\` | \`generate_secrets\` | Merged secrets for Docker |
 | \`.secrets.user.example.json\` | \`generate_secrets\` | Stripped copy of user secrets (empty values) — committed to git, acts like \`.env.example\` |
 | \`infrastructure/terraform/{env}/\` | \`infra:generate\` | Terraform configs |
-| \`infrastructure/kong/{env}/\` | \`infra:generate-kong\` | Cloud Kong config |
+| \`infrastructure/kong/{env}/\` | \`infra:generate-kong\` | Cloud Kong config (committed) |
+| \`infrastructure/kong/Dockerfile\`, \`.dockerignore\` | \`generate_kong\` / \`sync\` | Kong image (same definition locally and in the cloud; committed) |
+| \`infrastructure/kong/kong-plugins/\`, \`declarative/\` | \`generate_kong\` / \`sync\` | Kong image build context (gitignored; a fresh clone needs \`sync\` before \`docker compose up\`) |
 
 ## Override Files (edit these)
 | File | Merged with | Purpose |
 |------|-------------|---------|
-| \`kong.user.yml\` | \`kong.tsdevstack.yml\` | Custom Kong routes |
+| \`kong.user.yml\` | \`kong.tsdevstack.yml\` | Global plugins, custom Kong services. Its global \`rate-limiting\` also sets the default per-key limits on partner routes. Its \`request-transformer\` must only handle \`X-Kong-Trust\` and \`X-Kong-Request-Id\`. \`consumers\` with \`keyauth_credentials\` no longer work (generation warns); partner keys come from the auth service admin API |
+| \`kong-plugins/\` (project root) | the Kong image | Your own Kong Lua plugins, one folder per plugin (\`handler.lua\`, \`schema.lua\`); enable them in \`kong.user.yml\` |
 | \`docker-compose.user.yml\` | \`docker-compose.yml\` | Custom Docker config |
 | \`.secrets.user.json\` | \`.secrets.tsdevstack.json\` | Your secrets and assignments |`;
 

@@ -30,6 +30,22 @@ NEVER install third-party packages for features nest-common already provides:
 ## NEVER use process.env
 Always use \`SecretsService\` to read secrets. The secrets system handles provider detection (local/gcp/aws/azure), caching, and service-scoped access.
 
+## Authentication, partners and roles
+The global \`AuthGuard\` (registered by the generated apps) checks the Kong trust token first, then classifies the caller. \`req.authType\` tells you which one:
+- \`'user'\`: logged-in user from the JWT (\`req.user\`; \`req.user.id\` is the \`sub\` claim, plus \`systemRole\` and \`roles\` with the auth template)
+- \`'apiKey'\`: partner API key (\`req.apiKey = { id, consumer }\`, \`req.service === 'partner'\`, never \`req.user\`); only allowed on \`@PartnerApi()\` handlers, 403 elsewhere
+- \`'service'\`: internal call with the service \`x-api-key\` (\`req.service\` is the caller)
+- none: anonymous, only on \`@Public()\` handlers
+
+Decorators and types: \`@Public()\`, \`@PartnerApi()\`, \`@Partner()\` (consumer name), \`@ApiKey()\` (\`{ id, consumer }\`), \`@Roles(...roles)\` (applies \`RolesGuard\`: the user needs one of the roles as \`systemRole\` or in \`roles\`, else 403), \`ROLES_KEY\`, \`AuthenticatedRequest\`, \`AuthType\`, \`AuthenticatedApiKey\`, \`KongUser\`. Don't add \`@UseGuards(AuthGuard)\`: it's already global. Roles come from the token, so changes apply at the next token refresh; re-check the database for sensitive actions.
+
+API keys: Kong's \`tsdevstack-api-key\` plugin validates partner keys against Redis and sends \`X-Api-Key-Id\` / \`X-Api-Key-Consumer\` (read by \`AuthGuard\` only with a valid trust token). The auth service template manages keys. Projects without it write key records to Redis with the exported contract: \`hashApiKey\`, \`buildApiKeyRecordKey\`, \`buildApiKeyCounterKey\`, \`buildApiKeyLastUsedKey\`, \`encodeApiKeyRecord\`, \`decodeApiKeyRecord\`, \`validateApiKeyRecord\`, \`getApiKeyRecordExpireAt\`, window helpers, \`API_KEY_*\` constants (\`API_KEY_INDEX_MARKER_KEY\` = \`apikey:meta\`), type \`ApiKeyRecord\`. Docs-site \`/authentication/api-keys\`.
+
+Rate limiting: per-IP limits use Kong's \`X-Real-IP\` only for requests that came through Kong (\`req.viaGateway\`), otherwise the socket address. The \`userId\` limiter counts partner requests by key id.
+
+## RedisService
+Reconnects forever after an outage (backoff capped at 5 s). Commands fail fast while disconnected, so handle errors. \`isReady()\` says whether Redis is usable now; \`onReady(listener)\` runs on every (re)connect and returns an unsubscribe function. The health check reports Redis \`down\` during an outage (overall \`degraded\`, still HTTP 200).
+
 ## StorageModule — Object Storage
 \`StorageModule\` provides a unified interface for object storage across all providers.
 

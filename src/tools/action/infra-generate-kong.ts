@@ -14,7 +14,7 @@ export function registerInfraGenerateKongTool(server: McpServer): void {
     {
       title: 'Generate Kong Config',
       description:
-        'Generate Kong declarative config from OpenAPI specs for cloud deployment. Usually called internally by deploy-kong.',
+        'Generate the cloud Kong config (infrastructure/kong/{env}/kong.yml, with secret placeholders; commit it) from the OpenAPI specs and kong.user.yml. First of three steps for any cloud gateway change: infra_generate_kong, then infra_build_kong, then deploy_kong. infra_deploy runs all three.',
       inputSchema: {
         env: z.string().optional().describe('Target environment (optional)'),
       },

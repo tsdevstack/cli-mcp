@@ -14,7 +14,7 @@ export function registerInfraBuildKongTool(server: McpServer): void {
     {
       title: 'Build Kong Image',
       description:
-        'Build Kong Docker image. Usually called internally by deploy-kong.',
+        'Build and push the Kong gateway image from the generated config and the kong-plugins/ folder. Run after infra_generate_kong and before deploy_kong.',
       inputSchema: {
         env: z.string().optional().describe('Target environment (optional)'),
         tag: z.string().optional().describe('Image tag (defaults to git SHA)'),

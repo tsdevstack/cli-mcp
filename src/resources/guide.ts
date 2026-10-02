@@ -14,7 +14,8 @@ const GUIDE_CONTENT = `# tsdevstack Framework Guide
 - \`packages/\` — Shared libraries and CLI packages (new packages go here, scaffold with rslib)
 - \`.tsdevstack/\` — Framework configuration (config.json, infrastructure.json, credentials, secret-map)
 - \`docs/\` — Documentation
-- \`infrastructure/\` — GENERATED Terraform and Kong files (never edit directly)
+- \`infrastructure/\` — GENERATED Terraform and Kong files, including the Kong image \`Dockerfile\` (never edit directly)
+- \`kong-plugins/\` (optional, committed): your own Kong Lua plugins, one folder per plugin; built into the gateway image locally and in the cloud
 
 ## Service Types
 - \`nestjs\` — Backend API service. Has globalPrefix, optional database, OpenAPI spec, Kong routes.
@@ -32,7 +33,7 @@ const GUIDE_CONTENT = `# tsdevstack Framework Guide
 - NEVER edit \`config.json\` directly to add services or workers — use \`add_service\` or \`register_detached_worker\`
 - NEVER edit \`config.json\` directly to add or remove storage buckets — use \`add_bucket_storage\` / \`remove_bucket_storage\`
 - NEVER edit \`config.json\` directly to add, remove, or update messaging topics — use \`add_messaging_topic\` / \`remove_messaging_topic\` / \`update_messaging_topic\`
-- NEVER edit files in \`infrastructure/terraform/\` or \`infrastructure/kong/\` — they're generated. Edit the generators in \`packages/cli-infra/src/utils/*/terraform-generate/\`
+- NEVER edit files in \`infrastructure/terraform/\` or \`infrastructure/kong/\` (including \`infrastructure/kong/Dockerfile\`): they're generated. Change the inputs instead (\`infrastructure.json\`, \`kong.user.yml\`, \`kong-plugins/\`, decorators) and regenerate
 - NEVER install npm packages for things nest-common already provides (Redis, auth guards, logging, rate limiting, observability, BullMQ config, service clients, **object storage**, **async messaging**)
 - NEVER install \`@aws-sdk/client-s3\`, \`@google-cloud/storage\`, or \`@azure/storage-blob\` directly — use nest-common's \`StorageModule\` which provides a unified \`StorageProvider\` interface across all providers
 - NEVER create a worker by copying service boilerplate — use \`register_detached_worker\` to add to config, then create \`worker.ts\` and \`worker.module.ts\` using nest-common's \`startWorker()\` wrapper
@@ -44,19 +45,25 @@ const GUIDE_CONTENT = `# tsdevstack Framework Guide
 ## OpenAPI Decorators Drive Everything
 NestJS OpenAPI/Swagger decorators are NOT just for documentation — they drive the entire gateway:
 1. \`@ApiOperation()\` on a controller method → the endpoint exists in OpenAPI spec
-2. \`generate_kong\` reads the OpenAPI spec → generates Kong routes
-3. \`@ApiBearerAuth()\` + \`@UseGuards(AuthGuard)\` → Kong adds JWT validation to that route
-4. \`@PartnerApi()\` → Kong exposes route under \`/api/\` prefix with API key auth
-5. \`generate_client\` reads the OpenAPI spec → generates TypeScript HTTP client + DTOs
+2. \`generate_kong\` reads the OpenAPI spec → generates Kong routes. Routes are exact: the path plus its declared methods (and \`OPTIONS\`). Other paths, extra segments, trailing slashes and other methods get 404 from Kong.
+3. \`@ApiBearerAuth()\` → Kong adds JWT validation to that route (the backend \`AuthGuard\` is already global; no \`@UseGuards\` needed). \`@Roles('ADMIN')\` restricts it to a role.
+4. \`@PartnerApi()\` → Kong exposes that one operation at \`/api\` + its path with API key auth; partner keys reach nothing else. Keys are runtime data (auth service admin API \`/auth/v1/admin/api-keys\`, checked by Kong against Redis), not config or secrets
+5. \`@Public()\` → no auth; without it (and without \`@ApiBearerAuth()\`) the backend answers 401
+6. \`generate_client\` reads the OpenAPI spec → generates TypeScript HTTP client + DTOs
 
-This means: if you add an endpoint without proper decorators, it won't appear in Kong routes, won't be accessible from outside, and won't generate client types. Decorators are the source of truth for the API contract.
+This means: an endpoint missing from the OpenAPI spec gets no Kong route (404 through the gateway) and no client types, and a new endpoint is unreachable until the Kong config is regenerated. Decorators are the source of truth for the API contract.
+
+## Gateway Trust
+- Backends trust identity only from Kong: \`AuthGuard\` checks the \`X-Kong-Trust\` token first and only then reads the user (\`req.user\`) or the partner key (\`req.apiKey\`, \`@Partner()\`). Direct calls to \`localhost:300x\` with identity headers get 401; internal calls use the service \`x-api-key\`.
+- Kong removes identity headers sent by clients before any auth plugin runs.
+- The gateway image is generated (\`infrastructure/kong/Dockerfile\`, same image locally and in the cloud). A fresh clone needs \`sync\` (or \`generate_kong\`) before \`docker compose up\`.
 
 ## Secrets System
 - Three-file merge: \`.secrets.tsdevstack.json\` (framework, auto-generated) + \`.secrets.user.json\` (yours) → \`.secrets.local.json\` (merged output)
 - Framework secrets (JWT keys, DB passwords, service API keys, service URLs) are auto-generated — don't touch them
-- User secrets (third-party API keys, custom config) go in \`.secrets.user.json\`
+- User secrets (third-party API keys, custom config) go in \`.secrets.user.json\`. Partner API keys are NOT secrets: never put them there or in \`kong.user.yml\` consumers (static keys were removed)
 - Each service only sees secrets assigned to it (scoping via \`secret-map.json\`)
-- Cloud: \`cloud_secrets_push\` prompts for 3 values (DOMAIN, RESEND_API_KEY, EMAIL_FROM) and auto-derives everything else
+- Cloud: \`cloud_secrets_push\` prompts for 3 values (DOMAIN, RESEND_API_KEY, EMAIL_FROM) and auto-derives everything else. With the auth template it also offers \`ADMIN_EMAILS\` (auth-service scope, first admins) when set locally; otherwise set it with \`cloud_secrets_set ADMIN_EMAILS --service auth-service --env {env}\`
 
 ## Docs-Site Reference
 The framework has a documentation site with detailed guides. When deployed, reference these for deeper reading:
@@ -95,7 +102,7 @@ The framework has a documentation site with detailed guides. When deployed, refe
 ## Deployment Model
 - \`infra_deploy\` = full deploy (Terraform infra + build Docker + push + deploy all services + Kong + LB + storage buckets). Required for new services/workers and new storage buckets.
 - \`deploy_services\` = code push only (build + push + deploy). For code updates to existing services. Supports \`--service\` for single service.
-- \`deploy_kong\` = rebuild and deploy Kong gateway. After changing routes/decorators.
+- Kong gateway changes (routes/decorators, \`kong.user.yml\`, \`kong-plugins/\`, CLI upgrades) = \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\`. \`deploy_kong\` alone deploys an already built image. \`infra_deploy\` runs all three.
 - \`deploy_lb\` = deploy/update load balancer. After changing domains.
 - New services/workers ALWAYS require \`infra_deploy\` because Terraform must create the container runtime.
 - New storage buckets require \`infra_deploy\` because Terraform must create the cloud bucket and sync \`STORAGE_BUCKET_*\` secrets.
