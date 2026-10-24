@@ -14,7 +14,7 @@ export function registerGetSecretTool(server: McpServer): void {
     {
       title: 'Get Secret',
       description:
-        'Get a single secret value from cloud. Use to check if a secret is set (e.g., DOMAIN). Returns the value — use with care.',
+        'Get a single secret value from cloud. Use to check if a secret is set (e.g., DOMAIN). Returns the value; use with care.',
       inputSchema: {
         key: z
           .string()

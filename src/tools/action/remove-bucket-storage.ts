@@ -19,7 +19,7 @@ What it does locally:
 - Removes bucket from storage.buckets in config.json
 - Regenerates docker-compose.yml (removes MinIO entirely if last bucket)
 - Regenerates secrets (removes STORAGE_* secrets if last bucket)
-- Does NOT delete any data from local MinIO — data remains in Docker volume
+- Does NOT delete any data from local MinIO; data remains in Docker volume
 
 What it does NOT do:
 - Does NOT remove cloud resources (S3 buckets, GCS buckets, Azure Blob containers)

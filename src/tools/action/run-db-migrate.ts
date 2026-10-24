@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerRunDbMigrateTool(server: McpServer): void {
   server.registerTool(
@@ -27,6 +28,9 @@ export function registerRunDbMigrateTool(server: McpServer): void {
       },
     },
     async ({ service, env }) =>
-      runCommand(['infra:run-db-migrate', '--service', service, '--env', env]),
+      runCommand(
+        ['infra:run-db-migrate', '--service', service, '--env', env],
+        LONG_COMMAND_TIMEOUT_MS,
+      ),
   );
 }

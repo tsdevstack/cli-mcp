@@ -8,7 +8,7 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-const NEST_COMMON_CONTENT = `# nest-common — Practical Notes
+const NEST_COMMON_CONTENT = `# nest-common: Practical Notes
 
 **Full reference:** See the docs-site at \`/packages/nest-common\`
 
@@ -46,7 +46,7 @@ Rate limiting: per-IP limits use Kong's \`X-Real-IP\` only for requests that cam
 ## RedisService
 Reconnects forever after an outage (backoff capped at 5 s). Commands fail fast while disconnected, so handle errors. \`isReady()\` says whether Redis is usable now; \`onReady(listener)\` runs on every (re)connect and returns an unsubscribe function. The health check reports Redis \`down\` during an outage (overall \`degraded\`, still HTTP 200).
 
-## StorageModule — Object Storage
+## StorageModule: Object Storage
 \`StorageModule\` provides a unified interface for object storage across all providers.
 
 **Setup:**
@@ -68,14 +68,14 @@ const url = await this.storage.getPresignedUrl('path/file.pdf', 3600);
 
 **StorageProvider methods:** upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
 
-**Provider selection:** Automatic from \`SECRETS_PROVIDER\` env var — \`local\`/\`aws\` → S3 adapter (MinIO locally, AWS S3 in cloud), \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter. No code changes between environments.
+**Provider selection:** Automatic from \`SECRETS_PROVIDER\` env var: \`local\`/\`aws\` → S3 adapter (MinIO locally, AWS S3 in cloud), \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter. No code changes between environments.
 
 **Bucket names at runtime:** Read from \`STORAGE_BUCKET_{NAME}\` secrets (e.g., \`STORAGE_BUCKET_UPLOADS\`). Locally these point to MinIO bucket names, in cloud they point to cloud bucket names (\`{project}-{name}-{env}\`).
 
 **Full reference:** See the docs-site at \`/features/object-storage\` for setup, bucket naming, secrets, and cloud deployment details.
 
-## MessagingModule — Async Messaging
-\`MessagingModule\` provides inter-service event broadcasting via Redis Streams. Same Redis instance as BullMQ and caching — no new infrastructure.
+## MessagingModule: Async Messaging
+\`MessagingModule\` provides inter-service event broadcasting via Redis Streams. Same Redis instance as BullMQ and caching; no new infrastructure.
 
 **Setup:**
 \`\`\`typescript
@@ -121,7 +121,7 @@ export class UserEventsHandler {
 Generates OpenAPI spec without starting the server. Used internally by CLI commands:
 - \`generate_kong\` reads the spec → generates Kong gateway routes
 - \`generate_client\` reads the spec → generates TypeScript HTTP client + DTOs
-Not typically called by user code, but important to know it exists — this is why OpenAPI decorators drive everything.`;
+Not typically called by user code, but important to know it exists; this is why OpenAPI decorators drive everything.`;
 
 export function registerGuideNestCommonResource(server: McpServer): void {
   server.registerResource(

@@ -14,7 +14,7 @@ export function registerDiffSecretsTool(server: McpServer): void {
     {
       title: 'Diff Secrets',
       description:
-        "Compare local secret names vs cloud — shows what's missing or extra. Run before deploying to catch mismatches.",
+        "Compare local secret names vs cloud: shows what's missing or extra. Run before deploying to catch mismatches.",
       inputSchema: {
         env: z.string().describe('Target environment (dev, staging, prod)'),
       },

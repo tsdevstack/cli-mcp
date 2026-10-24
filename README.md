@@ -100,7 +100,7 @@ Add to your `.mcp.json`:
 
 | Tool                     | Description                            |
 | ------------------------ | -------------------------------------- |
-| `cloud_secrets_push`     | Push secrets to cloud                  |
+| `cloud_secrets_push`     | Push framework secrets (no prompts)    |
 | `cloud_secrets_set`      | Set a single cloud secret              |
 | `cloud_secrets_remove`   | Remove a cloud secret                  |
 | `infra_deploy`           | Full infrastructure deployment         |

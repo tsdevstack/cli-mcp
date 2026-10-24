@@ -13,9 +13,9 @@ export function registerUpdateMessagingTopicTool(server: McpServer): void {
     'update_messaging_topic',
     {
       title: 'Update Messaging Topic',
-      description: `Sets the publishers and subscribers for a topic. Values replace the current list entirely — pass all desired services, not just additions.
+      description: `Sets the publishers and subscribers for a topic. Values replace the current list entirely: pass all desired services, not just additions.
 
-For example, if a topic currently has subscribers ["offers-service", "notifications-service"] and you call this with subscribers "offers-service", the result will be ["offers-service"] only — notifications-service is removed.
+For example, if a topic currently has subscribers ["offers-service", "notifications-service"] and you call this with subscribers "offers-service", the result will be ["offers-service"] only; notifications-service is removed.
 
 Always pass the complete desired list for both publishers and subscribers.`,
       inputSchema: {

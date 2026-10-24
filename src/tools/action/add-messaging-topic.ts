@@ -21,7 +21,7 @@ What it does:
 - Validates publisher/subscriber service names exist and are NestJS type
 - Runs sync
 
-Service selection: NestJS services only — no frontends, SPAs, or workers. Workers don't have independent module imports; if heavy work is needed, the subscriber handler enqueues a BullMQ job.
+Service selection: NestJS services only; no frontends, SPAs, or workers. Workers don't have independent module imports; if heavy work is needed, the subscriber handler enqueues a BullMQ job.
 
 To use in NestJS code:
 - Publishing service: import MessagingModule.forRoot({ consumerGroup: 'service-name' }) + inject MessagingService + call messaging.publish('topic-name', data)

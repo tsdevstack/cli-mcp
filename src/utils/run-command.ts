@@ -7,15 +7,14 @@
 
 import { execFile } from 'node:child_process';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-
-const DEFAULT_TIMEOUT_MS = 600_000; // 10 minutes (deploys can be long)
+import { DEFAULT_COMMAND_TIMEOUT_MS } from '../constants/index.js';
 
 export function runCommand(
   args: string[],
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  timeoutMs: number = DEFAULT_COMMAND_TIMEOUT_MS,
 ): Promise<CallToolResult> {
   return new Promise((resolve) => {
-    execFile(
+    const child = execFile(
       'npx',
       ['tsdevstack', ...args],
       {
@@ -31,5 +30,8 @@ export function runCommand(
         });
       },
     );
+    // Nothing can answer a prompt here: close stdin so an interactive prompt
+    // fails at once instead of waiting for the timeout
+    child.stdin?.end();
   });
 }

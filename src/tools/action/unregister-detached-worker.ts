@@ -14,7 +14,7 @@ export function registerUnregisterDetachedWorkerTool(server: McpServer): void {
     {
       title: 'Unregister Detached Worker',
       description:
-        'Remove a detached worker entry from config.json. Does NOT remove from cloud — use remove_detached_worker for that.',
+        'Remove a detached worker entry from config.json. Does NOT remove from cloud; use remove_detached_worker for that.',
       inputSchema: {
         worker: z.string().describe('Worker name to unregister'),
       },

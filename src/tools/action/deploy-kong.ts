@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerDeployKongTool(server: McpServer): void {
   server.registerTool(
@@ -25,6 +26,7 @@ export function registerDeployKongTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ env }) => runCommand(['infra:deploy-kong', '--env', env]),
+    async ({ env }) =>
+      runCommand(['infra:deploy-kong', '--env', env], LONG_COMMAND_TIMEOUT_MS),
   );
 }

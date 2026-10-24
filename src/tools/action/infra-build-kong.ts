@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerInfraBuildKongTool(server: McpServer): void {
   server.registerTool(
@@ -34,7 +35,7 @@ export function registerInfraBuildKongTool(server: McpServer): void {
       if (tag) {
         args.push('--tag', tag);
       }
-      return runCommand(args);
+      return runCommand(args, LONG_COMMAND_TIMEOUT_MS);
     },
   );
 }

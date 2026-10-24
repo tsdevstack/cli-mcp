@@ -15,7 +15,7 @@ export function registerProjectStateResources(server: McpServer): void {
     'tsdevstack://config',
     {
       description:
-        'Project name, services, types, ports — the main project configuration.',
+        'Project name, services, types, ports: the main project configuration.',
     },
     async (uri) => {
       const content = readProjectFile('.tsdevstack/config.json');
@@ -48,7 +48,7 @@ export function registerProjectStateResources(server: McpServer): void {
             uri: uri.href,
             text:
               content ??
-              'infrastructure.json not found. This is a user-created file — see the guide/config resource for how to create it.',
+              'infrastructure.json not found. This is a user-created file; see the guide/config resource for how to create it.',
             mimeType: 'application/json',
           },
         ],
@@ -84,7 +84,7 @@ export function registerProjectStateResources(server: McpServer): void {
     'tsdevstack://ci',
     {
       description:
-        'CI/CD configuration — environments, provider, workflow settings.',
+        'CI/CD configuration: environments, provider, workflow settings.',
     },
     async (uri) => {
       const content = readProjectFile('.tsdevstack/ci.json');

@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerRemoveDetachedWorkerTool(server: McpServer): void {
   server.registerTool(
@@ -26,13 +27,16 @@ export function registerRemoveDetachedWorkerTool(server: McpServer): void {
       },
     },
     async ({ worker, env }) =>
-      runCommand([
-        'infra:remove-detached-worker',
-        '--worker',
-        worker,
-        '--env',
-        env,
-        '--confirm',
-      ]),
+      runCommand(
+        [
+          'infra:remove-detached-worker',
+          '--worker',
+          worker,
+          '--env',
+          env,
+          '--confirm',
+        ],
+        LONG_COMMAND_TIMEOUT_MS,
+      ),
   );
 }

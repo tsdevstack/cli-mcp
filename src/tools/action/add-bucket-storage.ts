@@ -32,9 +32,9 @@ To use in NestJS code:
 - StorageProvider interface: upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
 
 Cloud deployment:
-- Run infra_deploy — Terraform creates the cloud bucket (S3 on AWS, GCS on GCP, Azure Blob container on Azure)
+- Run infra_deploy; Terraform creates the cloud bucket (S3 on AWS, GCS on GCP, Azure Blob container on Azure)
 - After terraform apply, STORAGE_BUCKET_* names are synced to the cloud secret manager (shared scope)
-- No separate STORAGE_PROVIDER env var needed — the storage adapter is derived from SECRETS_PROVIDER at runtime (local/aws→S3, gcp→GCS, azure→Azure Blob)
+- No separate STORAGE_PROVIDER env var needed; the storage adapter is derived from SECRETS_PROVIDER at runtime (local/aws→S3, gcp→GCS, azure→Azure Blob)
 - Azure also injects AZURE_STORAGE_ACCOUNT_NAME as an env var on Container Apps`,
       inputSchema: {
         name: z

@@ -19,7 +19,7 @@ What it does:
 - Removes topic from messaging.topics in config.json
 - Runs sync
 
-Does NOT delete stream data in Redis — existing messages are unaffected and get trimmed naturally via MAXLEN as new messages push old entries out.`,
+Does NOT delete stream data in Redis; existing messages are unaffected and get trimmed naturally via MAXLEN as new messages push old entries out.`,
       inputSchema: {
         name: z.string().describe('Topic name to remove (e.g. "user-created")'),
       },

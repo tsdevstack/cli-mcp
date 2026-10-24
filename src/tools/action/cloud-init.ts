@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerCloudInitTool(server: McpServer): void {
   server.registerTool(
@@ -27,6 +28,7 @@ export function registerCloudInitTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ provider }) => runCommand(['cloud:init', `--${provider}`]),
+    async ({ provider }) =>
+      runCommand(['cloud:init', `--${provider}`], LONG_COMMAND_TIMEOUT_MS),
   );
 }

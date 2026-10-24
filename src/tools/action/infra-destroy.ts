@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerInfraDestroyTool(server: McpServer): void {
   server.registerTool(
@@ -26,6 +27,9 @@ export function registerInfraDestroyTool(server: McpServer): void {
       },
     },
     async ({ env }) =>
-      runCommand(['infra:destroy', '--env', env, '--auto-approve']),
+      runCommand(
+        ['infra:destroy', '--env', env, '--auto-approve'],
+        LONG_COMMAND_TIMEOUT_MS,
+      ),
   );
 }

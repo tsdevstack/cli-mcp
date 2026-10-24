@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerRemoveServiceCloudTool(server: McpServer): void {
   server.registerTool(
@@ -28,6 +29,9 @@ Follow-up (suggest to the user): if the removed service was a backend (nestjs), 
       },
     },
     async ({ service, env }) =>
-      runCommand(['infra:remove-service', service, '--env', env, '--confirm']),
+      runCommand(
+        ['infra:remove-service', service, '--env', env, '--confirm'],
+        LONG_COMMAND_TIMEOUT_MS,
+      ),
   );
 }

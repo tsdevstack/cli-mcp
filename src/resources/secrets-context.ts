@@ -38,7 +38,7 @@ export function registerSecretsContextResources(server: McpServer): void {
     'tsdevstack://secrets/names',
     {
       description:
-        'Secret names, scopes, and values (local dev only — no cloud credentials). Full content of the merged secrets file.',
+        'Secret names, scopes, and values (local dev only, no cloud credentials). Full content of the merged secrets file.',
     },
     async (uri) => {
       const content = readProjectFile('.secrets.local.json');
@@ -76,7 +76,7 @@ export function registerSecretsContextResources(server: McpServer): void {
         };
       }
 
-      // Strip values — only return keys and structure
+      // Strip values: only return keys and structure
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       const keysOnly: Record<string, unknown> = {};
 

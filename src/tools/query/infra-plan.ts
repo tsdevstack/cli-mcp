@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { LONG_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerInfraPlanTool(server: McpServer): void {
   server.registerTool(
@@ -14,7 +15,7 @@ export function registerInfraPlanTool(server: McpServer): void {
     {
       title: 'Infra Plan',
       description:
-        'Terraform plan — preview infrastructure changes without applying. Always run before `infra_deploy`.',
+        'Terraform plan: preview infrastructure changes without applying. Always run before `infra_deploy`.',
       inputSchema: {
         env: z.string().describe('Target environment (dev, staging, prod)'),
       },
@@ -25,6 +26,7 @@ export function registerInfraPlanTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ env }) => runCommand(['infra:plan', '--env', env]),
+    async ({ env }) =>
+      runCommand(['infra:plan', '--env', env], LONG_COMMAND_TIMEOUT_MS),
   );
 }

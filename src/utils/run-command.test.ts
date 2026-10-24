@@ -1,4 +1,10 @@
-import { describe, it, expect } from '@rstest/core';
+import { describe, it, expect, rs } from '@rstest/core';
+
+// Spy on execFile while keeping the real implementation
+rs.mock('node:child_process', { spy: true });
+
+import { execFile } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { runCommand } from './run-command';
 
 describe('runCommand', () => {
@@ -42,6 +48,17 @@ describe('runCommand', () => {
       expect(
         (result.content[0] as { text: string }).text.length,
       ).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Prompts', () => {
+    it('should close stdin so an interactive prompt cannot wait for input', async () => {
+      rs.mocked(execFile).mockClear();
+
+      await runCommand(['--version']);
+
+      const child = rs.mocked(execFile).mock.results[0]?.value as ChildProcess;
+      expect(child.stdin?.writableEnded).toBe(true);
     });
   });
 

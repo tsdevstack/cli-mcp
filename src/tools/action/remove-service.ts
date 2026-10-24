@@ -14,7 +14,7 @@ export function registerRemoveServiceTool(server: McpServer): void {
     {
       title: 'Remove Service',
       description:
-        'Remove a service from the local project (deletes files, updates config). Does NOT remove from cloud — use remove_service_cloud for that.',
+        'Remove a service from the local project (deletes files, updates config). Does NOT remove from cloud; use remove_service_cloud for that.',
       inputSchema: {
         service: z.string().describe('Service name to remove'),
       },

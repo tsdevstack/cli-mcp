@@ -38,7 +38,7 @@ export function registerGetInfrastructureConfigTool(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: 'infrastructure.json not found. This is a user-created file — see the guide/config resource for how to create it.',
+              text: 'infrastructure.json not found. This is a user-created file; see the guide/config resource for how to create it.',
             },
           ],
           isError: true,
