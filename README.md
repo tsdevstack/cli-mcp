@@ -4,11 +4,11 @@ MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 54 to
 
 ## Features
 
-- **54 MCP Tools** — 13 read-only queries + 41 actions covering the full tsdevstack CLI surface
-- **12 MCP Resources** — project state, secrets context, Kong routes, and framework guides
-- **Stdio Transport** — connects via stdin/stdout for IDE and agent integration
-- **Zod Validation** — all tool inputs validated with schemas
-- **MCP Annotations** — tools include `readOnlyHint`, `destructiveHint`, and `idempotentHint` metadata
+- **54 MCP Tools**: 13 read-only queries + 41 actions covering the full tsdevstack CLI surface
+- **12 MCP Resources**: project state, secrets context, Kong routes, and framework guides
+- **Stdio Transport**: connects via stdin/stdout for IDE and agent integration
+- **Zod Validation**: all tool inputs validated with schemas
+- **MCP Annotations**: tools include `readOnlyHint`, `destructiveHint`, and `idempotentHint` metadata
 
 ## Installation
 
@@ -77,7 +77,7 @@ Add to your `.mcp.json`:
 | `infra_plan`                | Terraform plan preview                  |
 | `infra_status`              | Infrastructure sync status              |
 
-### Action tools — local
+### Action tools: local
 
 | Tool                         | Description                                  |
 | ---------------------------- | -------------------------------------------- |
@@ -96,7 +96,7 @@ Add to your `.mcp.json`:
 | `register_detached_worker`   | Register a detached worker in config         |
 | `unregister_detached_worker` | Remove a worker from config                  |
 
-### Action tools — cloud
+### Action tools: cloud
 
 | Tool                     | Description                            |
 | ------------------------ | -------------------------------------- |
@@ -115,7 +115,7 @@ Add to your `.mcp.json`:
 | `remove_detached_worker` | Remove a worker from cloud             |
 | `infra_destroy`          | Destroy all cloud infrastructure       |
 
-### Action tools — setup & CI
+### Action tools: setup & CI
 
 | Tool                    | Description                           |
 | ----------------------- | ------------------------------------- |
