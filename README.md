@@ -1,10 +1,10 @@
 # @tsdevstack/cli-mcp
 
-MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 54 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
+MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 56 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
 
 ## Features
 
-- **54 MCP Tools**: 13 read-only queries + 41 actions covering the full tsdevstack CLI surface
+- **56 MCP Tools**: 13 read-only queries + 43 actions covering the full tsdevstack CLI surface
 - **12 MCP Resources**: project state, secrets context, Kong routes, and framework guides
 - **Stdio Transport**: connects via stdin/stdout for IDE and agent integration
 - **Zod Validation**: all tool inputs validated with schemas
@@ -103,6 +103,8 @@ Add to your `.mcp.json`:
 | `cloud_secrets_push`     | Push framework secrets (no prompts)    |
 | `cloud_secrets_set`      | Set a single cloud secret              |
 | `cloud_secrets_remove`   | Remove a cloud secret                  |
+| `cloud_secrets_migrate`  | Copy secrets left in old places        |
+| `cloud_secrets_cleanup`  | Delete the old copies of moved secrets |
 | `infra_deploy`           | Full infrastructure deployment         |
 | `deploy_services`        | Deploy code changes to services        |
 | `deploy_service`         | Build + push + deploy a single service |

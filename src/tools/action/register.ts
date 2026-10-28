@@ -1,7 +1,7 @@
 /**
  * Register Action Tools
  *
- * Registers all 41 action tools (14 local + 12 cloud + 15 setup/CI/internal) with the MCP server.
+ * Registers all 43 action tools (14 local + 14 cloud + 15 setup/CI/internal) with the MCP server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -26,6 +26,8 @@ import { registerUpdateMessagingTopicTool } from './update-messaging-topic.js';
 import { registerCloudSecretsPushTool } from './cloud-secrets-push.js';
 import { registerCloudSecretsSetTool } from './cloud-secrets-set.js';
 import { registerCloudSecretsRemoveTool } from './cloud-secrets-remove.js';
+import { registerCloudSecretsMigrateTool } from './cloud-secrets-migrate.js';
+import { registerCloudSecretsCleanupTool } from './cloud-secrets-cleanup.js';
 import { registerInfraDeployTool } from './infra-deploy.js';
 import { registerDeployServicesTool } from './deploy-services.js';
 import { registerDeployKongTool } from './deploy-kong.js';
@@ -74,6 +76,8 @@ export function registerActionTools(server: McpServer): void {
   registerCloudSecretsPushTool(server);
   registerCloudSecretsSetTool(server);
   registerCloudSecretsRemoveTool(server);
+  registerCloudSecretsMigrateTool(server);
+  registerCloudSecretsCleanupTool(server);
   registerInfraDeployTool(server);
   registerDeployServicesTool(server);
   registerDeployKongTool(server);

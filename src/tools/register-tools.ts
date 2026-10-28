@@ -1,7 +1,7 @@
 /**
  * Register Tools
  *
- * Registers all 54 MCP tools (13 query + 41 action) with the server.
+ * Registers all 56 MCP tools (13 query + 43 action) with the server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

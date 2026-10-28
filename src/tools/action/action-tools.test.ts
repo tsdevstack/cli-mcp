@@ -13,6 +13,8 @@ import { registerUnregisterDetachedWorkerTool } from './unregister-detached-work
 import { registerCloudSecretsPushTool } from './cloud-secrets-push';
 import { registerCloudSecretsSetTool } from './cloud-secrets-set';
 import { registerCloudSecretsRemoveTool } from './cloud-secrets-remove';
+import { registerCloudSecretsMigrateTool } from './cloud-secrets-migrate';
+import { registerCloudSecretsCleanupTool } from './cloud-secrets-cleanup';
 import { registerInfraDeployTool } from './infra-deploy';
 import { registerDeployServicesTool } from './deploy-services';
 import { registerDeployKongTool } from './deploy-kong';
@@ -132,6 +134,18 @@ describe('Action tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerCloudSecretsRemoveTool(server)).not.toThrow();
+    });
+
+    it('should register cloud_secrets_migrate tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerCloudSecretsMigrateTool(server)).not.toThrow();
+    });
+
+    it('should register cloud_secrets_cleanup tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerCloudSecretsCleanupTool(server)).not.toThrow();
     });
 
     it('should register infra_deploy tool', () => {

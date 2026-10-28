@@ -3,6 +3,8 @@
  *
  * Spawns `npx tsdevstack <command>` and captures output.
  * Returns MCP-formatted CallToolResult.
+ * `input` goes to the command's standard input (a secret value, with
+ * `--stdin`), so it never shows in the process list.
  */
 
 import { execFile } from 'node:child_process';
@@ -12,6 +14,7 @@ import { DEFAULT_COMMAND_TIMEOUT_MS } from '../constants/index.js';
 export function runCommand(
   args: string[],
   timeoutMs: number = DEFAULT_COMMAND_TIMEOUT_MS,
+  input?: string,
 ): Promise<CallToolResult> {
   return new Promise((resolve) => {
     const child = execFile(
@@ -32,6 +35,10 @@ export function runCommand(
     );
     // Nothing can answer a prompt here: close stdin so an interactive prompt
     // fails at once instead of waiting for the timeout
-    child.stdin?.end();
+    if (input === undefined) {
+      child.stdin?.end();
+    } else {
+      child.stdin?.end(input);
+    }
   });
 }

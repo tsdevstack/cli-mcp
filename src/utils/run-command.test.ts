@@ -60,6 +60,23 @@ describe('runCommand', () => {
       const child = rs.mocked(execFile).mock.results[0]?.value as ChildProcess;
       expect(child.stdin?.writableEnded).toBe(true);
     });
+
+    it('should write the input to stdin, then close it', async () => {
+      const end = rs.fn();
+      rs.mocked(execFile).mockImplementationOnce(((
+        _file: string,
+        _args: string[],
+        _options: unknown,
+        callback: (error: null, stdout: string, stderr: string) => void,
+      ) => {
+        callback(null, 'ok', '');
+        return { stdin: { end } } as unknown as ChildProcess;
+      }) as unknown as typeof execFile);
+
+      await runCommand(['cloud-secrets:set', 'KEY', '--stdin'], 1000, 's3cret');
+
+      expect(end).toHaveBeenCalledWith('s3cret');
+    });
   });
 
   describe('Output format', () => {

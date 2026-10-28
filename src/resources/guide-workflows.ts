@@ -45,11 +45,13 @@ No CLI command needed; this is code:
 8. For cloud: \`deploy_services\`, then \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\` (commit the regenerated \`infrastructure/kong/{env}/kong.yml\`)
 
 ## "Add a secret to a service"
-1. Read \`tsdevstack://secrets/map\` to see current assignments
-2. User adds key+value to \`.secrets.user.json\` under \`secrets\` object
-3. User adds the key name to the service's \`secrets\` array in \`.secrets.user.json\`
-4. \`generate_secrets\` → regenerates merged \`.secrets.local.json\`
-5. For cloud: \`cloud_secrets_set\` with the key and env, then \`deploy_services --service {name}\` to restart with new secret
+A backend service reads two scopes: shared (every service reads it) and its own. A secret only one service needs belongs in that service's scope; a value under the top-level \`"secrets"\` object is shared, readable by every backend.
+1. Locally: the user adds the value to the service's section of \`.secrets.user.json\`: \`"offers-service": { "STRIPE_SECRET_KEY": "sk_test_..." }\`
+2. \`generate_secrets\` → regenerates \`.secrets.local.json\`; backends pick the value up within a minute (SecretsService cache), no restart
+3. Cloud: ask the user for the environment's value, then \`cloud_secrets_set\` with the key, \`service: {name}\` and the env (\`cloud_secrets_push\` lists it as missing until then, with the command). Backends read it within 5 minutes, no redeploy
+4. Only a value every service needs goes under the top-level \`"secrets"\` object (cloud: \`cloud_secrets_set\` without \`service\`)
+
+Frontends (Next.js, SPA) are different: at deploy they get the shared keys listed in their \`"secrets"\` array (\`tsdevstack://secrets/map\`) as environment variables, so a frontend secret is shared, is listed in that array, and needs \`deploy_services --service {name}\` after a change.
 
 ## "Assign a domain to a frontend app"
 Only \`nextjs\` and \`spa\` apps can have domains. Backend services are NOT publicly available: they're behind Kong. Kong already has a fixed \`api.{DOMAIN}\` URL.
@@ -110,6 +112,12 @@ The project already exists (created via \`tsdevstack init\`). This is for deploy
 3. \`infra_deploy --env {env}\` → full deployment
 4. \`list_deployed_services --env {env}\` → verify everything is running
 
+## "Upgrade an existing cloud environment to a newer CLI"
+Secrets an older CLI kept in places the services no longer read from (the auth secrets in shared; on Azure, every service's secrets in the shared vault) move in three steps:
+1. \`cloud_secrets_migrate --env {env}\` → copies them to their new places; never deletes or overwrites, safe to repeat. If it reports a different value, show the user and ask which value is right
+2. \`infra_plan --env {env}\`, review, then \`infra_deploy --env {env}\` → the services now read the new places
+3. Ask the user, then \`cloud_secrets_cleanup --env {env}\` → deletes the old copies whose new copy has the same value and lists the ones it kept. Never before the deploy: on Azure it refuses while a Container App still reads the old copies
+
 ## "Deploy code changes only (no infra changes)"
 1. \`deploy_services --env {env}\` → build, push, deploy all services
 2. Or for single service: \`deploy_services --env {env} --service {name}\`
@@ -133,9 +141,9 @@ Never edit \`infrastructure/kong/Dockerfile\`: it's generated.
 2. \`get_service_status --service {name} --env {env}\` → specific service details (URL, image tag, health)
 
 ## "Debug a missing secret"
-1. Read \`tsdevstack://secrets/map\`: is the secret assigned to the service?
-2. Read \`tsdevstack://secrets/user\`: is the secret defined in \`.secrets.user.json\`?
-3. If cloud: \`diff_secrets --env {env}\` → compare local vs cloud (shows what's missing or extra)
+1. Read \`tsdevstack://secrets/user\`: is the secret defined in \`.secrets.user.json\`, at the top level (shared) or in the service's section (its own scope)? A backend reads shared and its own scope only; a value in another service's section is not readable
+2. Frontends: read \`tsdevstack://secrets/map\`: is the key in the frontend's \`secrets\` array?
+3. If cloud: \`diff_secrets --env {env}\` → compare local vs cloud (shows what's missing or extra), and \`get_secret\` with the service scope to check where the value is
 
 ## "Debug a 404 on an API endpoint"
 1. Read \`tsdevstack://kong/routes\`: does the route exist in Kong config?
@@ -274,24 +282,17 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\`: emails are logged to the te
 5. Cloud secrets (\`STORAGE_BUCKET_*\`) must be removed separately via \`cloud_secrets_remove\`
 
 ## "Add a custom secret to a service"
-1. Edit \`.secrets.user.json\`:
-   - Add key + value to \`"secrets"\` object (top level)
-   - Add the key name to the target service's \`"secrets"\` array
-2. \`generate_secrets\` → regenerates merged \`.secrets.local.json\`
-3. Restart services (or they'll pick up on next restart)
-4. For cloud: \`cloud_secrets_set KEY --value VALUE --env {env}\` then \`deploy_services --service {name}\` to restart with new secret
+See "Add a secret to a service": the value goes in the service's section of \`.secrets.user.json\` (its own scope), and in the cloud \`cloud_secrets_set\` with \`service: {name}\`.
 
-**Example**: adding STRIPE_KEY to offers-service:
+**Example**: STRIPE_SECRET_KEY for offers-service only:
 \`\`\`json
 {
-  "secrets": {
-    "STRIPE_SECRET_KEY": "sk_test_..."
-  },
   "offers-service": {
-    "secrets": ["STRIPE_SECRET_KEY"]
+    "STRIPE_SECRET_KEY": "sk_test_..."
   }
 }
 \`\`\`
+Cloud: \`cloud_secrets_set\` with key \`STRIPE_SECRET_KEY\`, \`service: offers-service\` and the env. Not under the top-level \`"secrets"\` object: every service could read it there.
 
 ## "Remove a service"
 1. \`remove_service\` for local removal (deletes files, updates config)

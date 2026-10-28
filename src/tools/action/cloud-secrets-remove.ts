@@ -21,7 +21,9 @@ export function registerCloudSecretsRemoveTool(server: McpServer): void {
         service: z
           .string()
           .optional()
-          .describe('Service scope (defaults to shared)'),
+          .describe(
+            'Service scope (default: auth-service for the auth secrets, shared for the rest)',
+          ),
       },
       annotations: {
         readOnlyHint: false,

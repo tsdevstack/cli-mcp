@@ -15,7 +15,7 @@ export function registerSecretsContextResources(server: McpServer): void {
     'tsdevstack://secrets/map',
     {
       description:
-        'Which secrets are assigned to which services. Critical for debugging "service X doesn\'t have secret Y" issues.',
+        'Keys listed per service in .secrets.user.json. Frontends get exactly these keys at deploy; backends read their shared and their own scope at runtime, whatever is listed.',
     },
     async (uri) => {
       const content = readProjectFile('.tsdevstack/secret-map.json');

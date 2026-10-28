@@ -25,7 +25,7 @@ describe('createServer', () => {
 });
 
 describe('Integration: tools/list', () => {
-  it('should list all 54 tools', async () => {
+  it('should list all 56 tools', async () => {
     const server = createServer();
     const client = new Client({ name: 'test-client', version: '1.0.0' });
     const [clientTransport, serverTransport] =
@@ -36,7 +36,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(54);
+    expect(result.tools.length).toBe(56);
 
     await client.close();
     await server.close();
@@ -105,6 +105,8 @@ describe('Integration: tools/list', () => {
       'cloud_secrets_push',
       'cloud_secrets_set',
       'cloud_secrets_remove',
+      'cloud_secrets_migrate',
+      'cloud_secrets_cleanup',
       'infra_deploy',
       'deploy_services',
       'deploy_kong',
@@ -154,6 +156,7 @@ describe('Integration: tools/list', () => {
     const destructiveTools = [
       'remove_service',
       'cloud_secrets_remove',
+      'cloud_secrets_cleanup',
       'remove_service_cloud',
       'remove_detached_worker',
       'infra_destroy',

@@ -2,11 +2,13 @@
  * Cloud Secrets Set Tool
  *
  * Wraps `npx tsdevstack cloud-secrets:set` to set a single secret in cloud.
+ * The value goes in on standard input (--stdin), not as an argument.
  */
 
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
+import { DEFAULT_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
 
 export function registerCloudSecretsSetTool(server: McpServer): void {
   server.registerTool(
@@ -22,7 +24,9 @@ export function registerCloudSecretsSetTool(server: McpServer): void {
         service: z
           .string()
           .optional()
-          .describe('Service scope (defaults to shared)'),
+          .describe(
+            'Service scope (default: auth-service for the auth secrets, shared for the rest)',
+          ),
       },
       annotations: {
         readOnlyHint: false,
@@ -35,8 +39,7 @@ export function registerCloudSecretsSetTool(server: McpServer): void {
       const args = [
         'cloud-secrets:set',
         key,
-        '--value',
-        value,
+        '--stdin',
         '--env',
         env,
         '--overwrite',
@@ -44,7 +47,7 @@ export function registerCloudSecretsSetTool(server: McpServer): void {
       if (service) {
         args.push('--service', service);
       }
-      return runCommand(args);
+      return runCommand(args, DEFAULT_COMMAND_TIMEOUT_MS, value);
     },
   );
 }
