@@ -3,6 +3,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createServer } from './server';
+import {
+  GET_LOGS_ASK_FIRST,
+  GET_SECRET_ASK_FIRST,
+  SERVER_INSTRUCTIONS,
+} from './constants/index.js';
 
 describe('createServer', () => {
   it('should return an McpServer instance', () => {
@@ -25,7 +30,7 @@ describe('createServer', () => {
 });
 
 describe('Integration: tools/list', () => {
-  it('should list all 56 tools', async () => {
+  it('should list all 57 tools', async () => {
     const server = createServer();
     const client = new Client({ name: 'test-client', version: '1.0.0' });
     const [clientTransport, serverTransport] =
@@ -36,7 +41,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(56);
+    expect(result.tools.length).toBe(57);
 
     await client.close();
     await server.close();
@@ -68,6 +73,7 @@ describe('Integration: tools/list', () => {
       'plan_db_migrate',
       'infra_plan',
       'infra_status',
+      'get_logs',
     ];
 
     for (const tool of queryTools) {
@@ -207,6 +213,52 @@ describe('Integration: tools/list', () => {
       expect(tool).toBeDefined();
       expect(tool?.annotations?.readOnlyHint).toBe(true);
     }
+
+    await client.close();
+    await server.close();
+  });
+});
+
+describe('Integration: sensitive reads', () => {
+  it('should give the client the instructions to ask before get_logs and get_secret', async () => {
+    const server = createServer();
+    const client = new Client({ name: 'test-client', version: '1.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const instructions = client.getInstructions();
+    expect(instructions).toBe(SERVER_INSTRUCTIONS);
+    expect(instructions).toContain('get_logs');
+    expect(instructions).toContain('get_secret');
+    expect(instructions).toContain('ALWAYS ASK THE USER FOR PERMISSION');
+
+    await client.close();
+    await server.close();
+  });
+
+  it('should start the get_logs and get_secret descriptions with the ask-first rule', async () => {
+    const server = createServer();
+    const client = new Client({ name: 'test-client', version: '1.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const result = await client.listTools();
+    const toolsByName = new Map(result.tools.map((t) => [t.name, t]));
+
+    expect(
+      toolsByName.get('get_logs')?.description?.startsWith(GET_LOGS_ASK_FIRST),
+    ).toBe(true);
+    expect(
+      toolsByName
+        .get('get_secret')
+        ?.description?.startsWith(GET_SECRET_ASK_FIRST),
+    ).toBe(true);
 
     await client.close();
     await server.close();

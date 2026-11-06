@@ -1,10 +1,10 @@
 # @tsdevstack/cli-mcp
 
-MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 56 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
+MCP (Model Context Protocol) server plugin for the tsdevstack CLI. Exposes 57 tools and 12 resources so AI agents like Claude can understand and assist you with the framework, the infrastructure, deployment flows and querying the project state.
 
 ## Features
 
-- **56 MCP Tools**: 13 read-only queries + 43 actions covering the full tsdevstack CLI surface
+- **57 MCP Tools**: 14 read-only queries + 43 actions covering the full tsdevstack CLI surface
 - **12 MCP Resources**: project state, secrets context, Kong routes, and framework guides
 - **Stdio Transport**: connects via stdin/stdout for IDE and agent integration
 - **Zod Validation**: all tool inputs validated with schemas
@@ -71,11 +71,12 @@ Add to your `.mcp.json`:
 | `list_deployed_services`    | All deployed services in an environment |
 | `list_secrets`              | Secret names in cloud (not values)      |
 | `diff_secrets`              | Compare local vs cloud secrets          |
-| `get_secret`                | Get a single secret value               |
+| `get_secret`                | One secret value (agent asks you first) |
 | `list_schedulers`           | Scheduled jobs and status               |
 | `plan_db_migrate`           | Preview pending database migrations     |
 | `infra_plan`                | Terraform plan preview                  |
 | `infra_status`              | Infrastructure sync status              |
+| `get_logs`                  | Log lines or sources (agent asks first) |
 
 ### Action tools: local
 

@@ -8,6 +8,7 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { readProjectFile } from './read-project-file.js';
+import { hideSecretValues } from '../utils/hide-secret-values.js';
 
 export function registerSecretsContextResources(server: McpServer): void {
   server.registerResource(
@@ -38,17 +39,31 @@ export function registerSecretsContextResources(server: McpServer): void {
     'tsdevstack://secrets/names',
     {
       description:
-        'Secret names, scopes, and values (local dev only, no cloud credentials). Full content of the merged secrets file.',
+        "Local secret names and scopes from .secrets.local.json (every value hidden): the shared keys (top-level `secrets`) and each service's section.",
     },
     async (uri) => {
-      const content = readProjectFile('.secrets.local.json');
+      const raw = readProjectFile('.secrets.local.json');
+      if (!raw) {
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              text: '.secrets.local.json not found. Run `npx tsdevstack generate-secrets` to generate it.',
+            },
+          ],
+        };
+      }
+
+      // Names and scopes only: never a value
+      const namesOnly = hideSecretValues(
+        JSON.parse(raw) as Record<string, unknown>,
+      );
+
       return {
         contents: [
           {
             uri: uri.href,
-            text:
-              content ??
-              '.secrets.local.json not found. Run `npx tsdevstack generate-secrets` to generate it.',
+            text: JSON.stringify(namesOnly, null, 2),
             mimeType: 'application/json',
           },
         ],
@@ -61,7 +76,7 @@ export function registerSecretsContextResources(server: McpServer): void {
     'tsdevstack://secrets/user',
     {
       description:
-        'User secret definitions and service assignments (keys only, no values). Shows which secrets the user has defined and which services they are assigned to.',
+        "User secret definitions and service assignments (keys only, every value hidden). Shows which secrets the user has defined: shared (top-level `secrets`) or in a service's own section.",
     },
     async (uri) => {
       const raw = readProjectFile('.secrets.user.json');
@@ -76,19 +91,10 @@ export function registerSecretsContextResources(server: McpServer): void {
         };
       }
 
-      // Strip values: only return keys and structure
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const keysOnly: Record<string, unknown> = {};
-
-      for (const [key, value] of Object.entries(parsed)) {
-        if (key === 'secrets' && typeof value === 'object' && value !== null) {
-          keysOnly[key] = Object.keys(value as Record<string, unknown>);
-        } else if (typeof value === 'object' && value !== null) {
-          keysOnly[key] = value;
-        } else {
-          keysOnly[key] = value;
-        }
-      }
+      // Keys and structure only: never a value
+      const keysOnly = hideSecretValues(
+        JSON.parse(raw) as Record<string, unknown>,
+      );
 
       return {
         contents: [

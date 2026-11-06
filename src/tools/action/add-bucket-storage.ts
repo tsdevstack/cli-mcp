@@ -17,13 +17,13 @@ export function registerAddBucketStorageTool(server: McpServer): void {
 
 What it does locally:
 - Adds bucket to storage.buckets in config.json
-- Regenerates docker-compose.yml with MinIO (S3-compatible) container + minio-init job that auto-creates the bucket
+- Regenerates docker-compose.yml with the RustFS (S3-compatible) container + a rustfs-init job that creates the bucket
 - Regenerates secrets with STORAGE_ENDPOINT, STORAGE_ACCESS_KEY, STORAGE_SECRET_KEY, STORAGE_BUCKET_{NAME}
-- First bucket also adds MinIO ports 9000 (API) + 9001 (web console) to docker-compose
+- First bucket also adds RustFS ports 9000 (API) + 9001 (web console) to docker-compose; data in ./data/rustfs
 
 After running this, tell the user to:
-1. Run \`docker compose up -d\` to start MinIO
-2. Access MinIO console at http://localhost:9001 (minioadmin/minioadmin)
+1. Run \`docker compose up -d\` to start RustFS
+2. Access the RustFS console at http://localhost:9001 (rustfsadmin/rustfsadmin)
 
 To use in NestJS code:
 - Import StorageModule.forRoot({ buckets: ['bucket-name'] }) in app module

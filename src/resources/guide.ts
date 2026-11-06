@@ -80,7 +80,7 @@ The framework has a documentation site with detailed guides. When deployed, refe
 
 ## Object Storage
 - \`add_bucket_storage\` / \`remove_bucket_storage\` manage storage buckets in config.json
-- Locally: MinIO (S3-compatible) runs in Docker on ports 9000 (API) + 9001 (console). Auto-generated in docker-compose when any bucket exists.
+- Locally: RustFS (S3-compatible) runs in Docker on ports 9000 (API) + 9001 (console). Auto-generated in docker-compose when any bucket exists.
 - NestJS: \`StorageModule.forRoot({ buckets: ['name'] })\` + \`@InjectStorage('name')\` → unified \`StorageProvider\` interface
 - StorageProvider methods: upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
 - Provider auto-detected from \`SECRETS_PROVIDER\`: \`local\`/\`aws\` → S3 adapter, \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter

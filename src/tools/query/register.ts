@@ -1,7 +1,7 @@
 /**
  * Register Query Tools
  *
- * Registers all 13 read-only (query) tools with the MCP server.
+ * Registers all 14 read-only (query) tools with the MCP server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -18,6 +18,7 @@ import { registerListSchedulersTool } from './list-schedulers.js';
 import { registerPlanDbMigrateTool } from './plan-db-migrate.js';
 import { registerInfraPlanTool } from './infra-plan.js';
 import { registerInfraStatusTool } from './infra-status.js';
+import { registerGetLogsTool } from './get-logs.js';
 
 export function registerQueryTools(server: McpServer): void {
   // File-read tools (no CLI command needed)
@@ -36,4 +37,5 @@ export function registerQueryTools(server: McpServer): void {
   registerPlanDbMigrateTool(server);
   registerInfraPlanTool(server);
   registerInfraStatusTool(server);
+  registerGetLogsTool(server);
 }

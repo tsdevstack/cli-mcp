@@ -68,9 +68,9 @@ const url = await this.storage.getPresignedUrl('path/file.pdf', 3600);
 
 **StorageProvider methods:** upload, download, downloadStream, delete, list, copy, getMetadata, getPresignedUrl, exists, getNativeClient
 
-**Provider selection:** Automatic from \`SECRETS_PROVIDER\` env var: \`local\`/\`aws\` → S3 adapter (MinIO locally, AWS S3 in cloud), \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter. No code changes between environments.
+**Provider selection:** Automatic from \`SECRETS_PROVIDER\` env var: \`local\`/\`aws\` → S3 adapter (RustFS locally, AWS S3 in cloud), \`gcp\` → GCS adapter, \`azure\` → Azure Blob adapter. No code changes between environments.
 
-**Bucket names at runtime:** Read from \`STORAGE_BUCKET_{NAME}\` secrets (e.g., \`STORAGE_BUCKET_UPLOADS\`). Locally these point to MinIO bucket names, in cloud they point to cloud bucket names (\`{project}-{name}-{env}\`).
+**Bucket names at runtime:** Read from \`STORAGE_BUCKET_{NAME}\` secrets (e.g., \`STORAGE_BUCKET_UPLOADS\`). Locally these point to RustFS bucket names, in cloud they point to cloud bucket names (\`{project}-{name}-{env}\`).
 
 **Full reference:** See the docs-site at \`/features/object-storage\` for setup, bucket naming, secrets, and cloud deployment details.
 

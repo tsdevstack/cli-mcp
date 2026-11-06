@@ -28,7 +28,9 @@ Workers run as separate containers sharing their base service's Docker image.
    - \`apps/{base-service}/src/worker.ts\`: entry point using \`startWorker()\` from nest-common
    - \`apps/{base-service}/src/worker.module.ts\`: NestJS module importing \`BullConfigModule.forRoot()\` and registering queues
    - \`apps/{base-service}/src/processors/{queue-name}.processor.ts\`: BullMQ processor classes
-3. Import \`BullModule.registerQueue({ name: 'queue-name' })\` in the main app module too (so the app can add jobs to the queue)
+   - \`apps/{base-service}/tsconfig.worker.json\`: extends \`tsconfig.build.json\` with \`"outDir": "./node_modules/.cache/worker-dev"\` (local build of the worker)
+   - Scripts in \`apps/{base-service}/package.json\`: \`"start-worker": "node dist/worker.js"\` and \`"start-worker:dev": "nest start --entryFile worker --watch --path tsconfig.worker.json"\` (\`npm run dev\` starts it)
+3. Import \`BullModule.registerQueue({ name: 'queue-name' })\` in the main app module too (so the app can add jobs to the queue). Processors go ONLY in the worker module, never in the app module
 4. \`sync\` → regenerates config
 5. \`infra_deploy --env {env}\` (Terraform must create the worker container)
 6. After first deploy, code updates: \`deploy_services --service {base-service}\` (deploys both app and worker)
@@ -55,7 +57,7 @@ Frontends (Next.js, SPA) are different: at deploy they get the shared keys liste
 
 ## "Assign a domain to a frontend app"
 Only \`nextjs\` and \`spa\` apps can have domains. Backend services are NOT publicly available: they're behind Kong. Kong already has a fixed \`api.{DOMAIN}\` URL.
-1. \`get_secret DOMAIN --env {env}\` → check if DOMAIN is set in cloud
+1. Ask the user first, then \`get_secret DOMAIN --env {env}\` → check if DOMAIN is set in cloud
 2. If DOMAIN is not set: tell user to set it first (\`cloud_secrets_set DOMAIN example.com --env {env}\`), then run \`cloud_secrets_push --env {env}\` to derive API_URL, APP_URL and KONG_CORS_ORIGINS
 3. If DOMAIN is set: edit \`infrastructure.json\` → add \`"domain": "example.com"\` to the frontend app's env entry
    - If the app doesn't have an entry in the env config yet, create one: \`"frontend": { "domain": "example.com" }\`
@@ -89,7 +91,7 @@ Most projects on GCP or Azure WILL need this because \`minInstances: 0\` (scale 
      - \`loadBalancer\` (apiDomain, redirectDomains), if domains are configured
      - \`scheduledJobs\` array, if cron jobs exist
 4. For additional environments (staging, prod), add sibling keys with appropriate values
-5. **Advise users:** On GCP and Azure, non-prod environments can use \`minInstances: 0\` (scale to zero) to save costs. On AWS every service and Kong needs \`minInstances: 1\` or more (no scale to zero); lower AWS dev cost with smaller \`cpu\`/\`memory\` instead. Prod should have \`minInstances: 1\` or higher for availability.
+5. **Advise users:** On GCP and Azure, non-prod environments can use \`minInstances: 0\` (scale to zero) to save costs: messages for those services wait in Redis until a request starts them, and the first request waits for a cold start. On AWS every service and Kong needs \`minInstances: 1\` or more (no scale to zero); lower AWS dev cost with smaller \`cpu\`/\`memory\` instead. Prod should keep \`minInstances: 1\` or higher (the default) for every service. On GCP, a NestJS service with \`minInstances\` 1 or more keeps its CPU on between requests and needs \`cpu\` 1 or more.
 
 ## "Set up a new cloud environment (first deploy)"
 The project already exists (created via \`tsdevstack init\`). This is for deploying to a new environment.
@@ -118,6 +120,8 @@ Secrets an older CLI kept in places the services no longer read from (the auth s
 2. \`infra_plan --env {env}\`, review, then \`infra_deploy --env {env}\` → the services now read the new places
 3. Ask the user, then \`cloud_secrets_cleanup --env {env}\` → deletes the old copies whose new copy has the same value and lists the ones it kept. Never before the deploy: on Azure it refuses while a Container App still reads the old copies
 
+If \`infra_plan\` or \`infra_deploy\` stops because the lock file holds older Terraform providers, the upgrade is the user's step. Show them the message. They run \`npx tsdevstack infra:plan --env {env} --upgrade\`, review the plan and commit \`.terraform.lock.hcl\`. Then continue with \`infra_deploy\`.
+
 ## "Deploy code changes only (no infra changes)"
 1. \`deploy_services --env {env}\` → build, push, deploy all services
 2. Or for single service: \`deploy_services --env {env} --service {name}\`
@@ -140,10 +144,18 @@ Never edit \`infrastructure/kong/Dockerfile\`: it's generated.
 1. \`list_deployed_services --env {env}\` → all services with status
 2. \`get_service_status --service {name} --env {env}\` → specific service details (URL, image tag, health)
 
+## "Debug an error in a deployed environment (read the logs)"
+Logs can contain sensitive data. Ask the user before every \`get_logs\` call: which environment, which sources, and why. Wait for an explicit yes.
+1. \`get_logs --env {env}\` → the sources (services, workers, frontends, kong, migrate-{service}, scheduled jobs, edge) and when each last logged
+2. \`get_logs --env {env} --source {name} --level warn\` → the newest 200 warnings and errors of the last hour. \`kind: platform\` shows crashes, failed health checks and deploys; \`kind: edge\` the load balancer and WAF
+3. Follow one request: take \`trace_id\` from a line, then \`get_logs --env {env} --all --grep {trace id}\`
+4. The tool says which lines it left out: narrow with \`since\`, \`until\`, \`level\`, \`kind\` or \`grep\` to see them
+Times are UTC. Azure lines arrive 1 to 10 minutes late. Logs hold personal data (emails, IP addresses, query strings): use them to debug, never copy them into files, issues or messages. On GCP, a missing Logs Viewer role means the user runs \`infra_bootstrap --env {env}\`; the read limit (60 per minute) means waiting a minute or narrowing the query.
+
 ## "Debug a missing secret"
 1. Read \`tsdevstack://secrets/user\`: is the secret defined in \`.secrets.user.json\`, at the top level (shared) or in the service's section (its own scope)? A backend reads shared and its own scope only; a value in another service's section is not readable
 2. Frontends: read \`tsdevstack://secrets/map\`: is the key in the frontend's \`secrets\` array?
-3. If cloud: \`diff_secrets --env {env}\` → compare local vs cloud (shows what's missing or extra), and \`get_secret\` with the service scope to check where the value is
+3. If cloud: \`diff_secrets --env {env}\` → compare local vs cloud (shows what's missing or extra), and, after asking the user, \`get_secret\` with the service scope to check where the value is
 
 ## "Debug a 404 on an API endpoint"
 1. Read \`tsdevstack://kong/routes\`: does the route exist in Kong config?
@@ -223,7 +235,7 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
 ## "Start local development"
 1. \`npm install\` (if fresh clone)
 2. \`sync\` → generates all config: secrets, docker-compose, kong config, the Kong image build files, env files, secret-map (required on a fresh clone before \`docker compose up\`)
-3. Tell user to run \`npm run dev\`: this starts Docker Compose (PostgreSQL, Redis, Kong, pgAdmin, Prometheus, Grafana, Jaeger, Redis Commander, and MinIO if storage buckets are configured) + all services in parallel via Lerna
+3. Tell user to run \`npm run dev\`: this starts Docker Compose (PostgreSQL, Redis, Kong, pgAdmin, Prometheus, Grafana, Jaeger, Redis Commander, and RustFS if storage buckets are configured) + all services and workers in parallel via Lerna
 
 ### Local URLs
 | Service | URL | Purpose |
@@ -234,11 +246,11 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
 | pgAdmin | http://localhost:5050 | Database management (login: admin@localhost.com / admin) |
 | Redis Commander | http://localhost:8081 | Redis data browser |
 | Prometheus | http://localhost:9090 | Metrics storage and queries |
-| Grafana | http://localhost:4001 | Dashboards (login: admin / admin) |
+| Grafana | http://localhost:4001 | Dashboards in the \`tsdevstack\` folder (view without login; admin / admin to edit) |
 | Jaeger | http://localhost:16686 | Distributed tracing UI |
 | Prisma Studio | http://localhost:5555 | Visual database editor (run \`cd apps/{service} && npx prisma studio\`) |
-| MinIO API | http://localhost:9000 | S3-compatible object storage (only if storage buckets configured) |
-| MinIO Console | http://localhost:9001 | Storage browser (login: minioadmin / minioadmin) |
+| RustFS API | http://localhost:9000 | S3-compatible object storage (only if storage buckets configured) |
+| RustFS Console | http://localhost:9001 | Storage browser (login: rustfsadmin / rustfsadmin) |
 
 Backend services run on their configured ports (3001, 3002, 3003, etc.); access them through Kong at \`:8000\` for authenticated requests, or directly for health/metrics.
 
@@ -263,8 +275,8 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\`: emails are logged to the te
 - **Missing secrets**: Run \`generate_secrets\` to regenerate all config files
 
 ## "Add object storage to the project"
-1. \`add_bucket_storage\` with a logical name (kebab-case, 2-30 chars) → updates config.json, regenerates docker-compose (adds MinIO if first bucket), regenerates secrets (adds STORAGE_* entries)
-2. Tell user to restart Docker: \`docker compose up -d\`. MinIO starts on ports 9000 (API) + 9001 (console, login: minioadmin/minioadmin)
+1. \`add_bucket_storage\` with a logical name (kebab-case, 2-30 chars) → updates config.json, regenerates docker-compose (adds RustFS if first bucket), regenerates secrets (adds STORAGE_* entries)
+2. Tell user to restart Docker: \`docker compose up -d\`. RustFS starts on ports 9000 (API) + 9001 (console, login: rustfsadmin/rustfsadmin)
 3. In the NestJS service that needs storage:
    - Import \`StorageModule.forRoot({ buckets: ['bucket-name'] })\` (or \`forRootAsync\` for dynamic config)
    - Inject with \`@InjectStorage('bucket-name') private storage: StorageProvider\`
@@ -275,8 +287,8 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\`: emails are logged to the te
 **Full reference:** See docs-site at \`/features/object-storage\` for API reference, bucket naming, secrets, and provider details.
 
 ## "Remove object storage from the project"
-1. \`remove_bucket_storage\` with the bucket name → removes from config.json, regenerates docker-compose (removes MinIO if last bucket), regenerates secrets
-2. Local MinIO data is NOT deleted; it remains in Docker volumes
+1. \`remove_bucket_storage\` with the bucket name → removes from config.json, regenerates docker-compose (removes RustFS if last bucket), regenerates secrets
+2. Local RustFS data is NOT deleted; it remains in ./data/rustfs
 3. For cloud cleanup: \`infra_deploy --env {env}\` removes the bucket from Terraform state. **WARNING: this deletes all data in the cloud bucket.** Back up first if needed.
 4. If this was the last bucket: manually remove \`StorageModule\` imports from NestJS code
 5. Cloud secrets (\`STORAGE_BUCKET_*\`) must be removed separately via \`cloud_secrets_remove\`

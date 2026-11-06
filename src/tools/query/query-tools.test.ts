@@ -14,9 +14,10 @@ import { registerListSchedulersTool } from './list-schedulers';
 import { registerPlanDbMigrateTool } from './plan-db-migrate';
 import { registerInfraPlanTool } from './infra-plan';
 import { registerInfraStatusTool } from './infra-status';
+import { registerGetLogsTool } from './get-logs';
 
 describe('Query tools registration', () => {
-  it('should register all 13 query tools without errors', () => {
+  it('should register all 14 query tools without errors', () => {
     const server = new McpServer({ name: 'test', version: '1.0.0' });
 
     expect(() => registerQueryTools(server)).not.toThrow();
@@ -99,6 +100,12 @@ describe('Query tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerInfraStatusTool(server)).not.toThrow();
+    });
+
+    it('should register get_logs tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerGetLogsTool(server)).not.toThrow();
     });
   });
 });

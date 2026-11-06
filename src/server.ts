@@ -7,12 +7,16 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerTools } from './tools/register-tools.js';
 import { registerResources } from './resources/register-resources.js';
+import { SERVER_INSTRUCTIONS } from './constants/index.js';
 
 export function createServer(): McpServer {
-  const server = new McpServer({
-    name: 'tsdevstack',
-    version: '1.0.0',
-  });
+  const server = new McpServer(
+    {
+      name: 'tsdevstack',
+      version: '1.0.0',
+    },
+    { instructions: SERVER_INSTRUCTIONS },
+  );
 
   registerTools(server);
   registerResources(server);
