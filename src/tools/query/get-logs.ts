@@ -23,7 +23,7 @@ export function registerGetLogsTool(server: McpServer): void {
       description:
         GET_LOGS_ASK_FIRST +
         'Read the logs of a deployed environment. ' +
-        'Without `source` and `all`: lists the log sources (services, workers, frontends, kong, migrate-<service>, scheduled jobs, edge) and when each last logged. ' +
+        'Without `source` and `all`: lists the log sources (services, workers, frontends, kong, migrate-<service>, db-init (the database setup infra:deploy runs), scheduled jobs, bucket-<name> for the reads and writes of a storage bucket, edge) and when each last logged. ' +
         `With \`source\` or \`all\`: the newest ${GET_LOGS_NEWEST_LINES} lines of the time window (default: the last hour), oldest first, one JSON object per line (time in UTC, source, kind app/platform/edge, level, message, fields). ` +
         'A note at the end says which lines were left out; narrow with since, level, kind or grep to see them. ' +
         '`level` leaves out lines without a level (Kong, frontends, plain text). ' +

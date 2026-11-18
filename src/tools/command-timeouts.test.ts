@@ -25,6 +25,7 @@ import { registerInfraPushDockerTool } from './action/infra-push-docker';
 import { registerInfraBuildKongTool } from './action/infra-build-kong';
 import { registerRunDbMigrateTool } from './action/run-db-migrate';
 import { registerRemoveServiceCloudTool } from './action/remove-service-cloud';
+import { registerRestoreDatabaseTool } from './action/restore-database';
 import { registerRemoveDetachedWorkerTool } from './action/remove-detached-worker';
 import { registerInfraInitTool } from './action/infra-init';
 import { registerInfraBootstrapTool } from './action/infra-bootstrap';
@@ -75,6 +76,11 @@ const LONG_RUNNING: [Register, string, Record<string, string>][] = [
   [
     registerRemoveServiceCloudTool,
     'remove_service_cloud',
+    { service: 'auth-service', env: 'dev' },
+  ],
+  [
+    registerRestoreDatabaseTool,
+    'restore_database',
     { service: 'auth-service', env: 'dev' },
   ],
   [

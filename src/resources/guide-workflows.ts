@@ -23,13 +23,12 @@ const WORKFLOWS_CONTENT = `# tsdevstack Workflow Reference
 
 ## "Add a background job processor (detached worker)"
 Workers run as separate containers sharing their base service's Docker image.
-1. \`register_detached_worker\` with name and base-service → adds worker entry to config.json
-2. User creates these files manually:
+1. \`register_detached_worker\` with name and base-service → adds worker entry to config.json, and creates whichever of these are missing (never overwriting one):
    - \`apps/{base-service}/src/worker.ts\`: entry point using \`startWorker()\` from nest-common
-   - \`apps/{base-service}/src/worker.module.ts\`: NestJS module importing \`BullConfigModule.forRoot()\` and registering queues
-   - \`apps/{base-service}/src/processors/{queue-name}.processor.ts\`: BullMQ processor classes
+   - \`apps/{base-service}/src/worker.module.ts\`: NestJS module importing \`BullConfigModule.forRoot()\`, with no queues yet
    - \`apps/{base-service}/tsconfig.worker.json\`: extends \`tsconfig.build.json\` with \`"outDir": "./node_modules/.cache/worker-dev"\` (local build of the worker)
    - Scripts in \`apps/{base-service}/package.json\`: \`"start-worker": "node dist/worker.js"\` and \`"start-worker:dev": "nest start --entryFile worker --watch --path tsconfig.worker.json"\` (\`npm run dev\` starts it)
+2. Write the processors: \`apps/{base-service}/src/processors/{queue-name}.processor.ts\` (BullMQ \`@Processor\` classes); in \`worker.module.ts\`, register each queue with \`BullModule.registerQueue({ name: 'queue-name' })\` and add the processor to \`providers\`
 3. Import \`BullModule.registerQueue({ name: 'queue-name' })\` in the main app module too (so the app can add jobs to the queue). Processors go ONLY in the worker module, never in the app module
 4. \`sync\` → regenerates config
 5. \`infra_deploy --env {env}\` (Terraform must create the worker container)
@@ -186,9 +185,10 @@ Scheduled jobs are cron triggers that call service endpoints over HTTPS. They do
      "targetService": "auth-service",
      "endpoint": "/auth/jobs/cleanup-tokens",
      "method": "POST",
-     "httpTimeout": 300
+     "httpTimeout": 120
    }
    \`\`\`
+   \`httpTimeout\` (seconds) is 15 to 1800 on GCP, 15 to 890 on AWS, 15 to 240 on Azure.
 4. \`deploy_schedulers --env {env}\` (or \`deploy_scheduler --env {env} --scheduler cleanup-tokens\`)
 
 **Important:** Services must be deployed before schedulers. Schedulers only make HTTPS calls; they don't run code or access databases directly.
@@ -307,8 +307,14 @@ See "Add a secret to a service": the value goes in the service's section of \`.s
 Cloud: \`cloud_secrets_set\` with key \`STRIPE_SECRET_KEY\`, \`service: offers-service\` and the env. Not under the top-level \`"secrets"\` object: every service could read it there.
 
 ## "Remove a service"
-1. \`remove_service\` for local removal (deletes files, updates config)
-2. For cloud removal: \`remove_service_cloud --service {name} --env {env}\` (deletes container, secrets, database; this is permanent)
+1. In each environment it ran in: \`remove_service_cloud --service {name} --env {env}\` (deletes its containers, workers, secrets and database; the database is saved first, kept 7 days)
+2. \`remove_service\` for local removal (deletes files, updates config)
+3. In each of those environments: \`infra_deploy --env {env}\` (removes its Kong and load balancer routes and the scheduled jobs that call it)
+
+## "Bring back a removed service's database"
+1. With the service in the project: \`cloud_secrets_push --env {env}\`, then \`infra_deploy --env {env}\`
+2. \`restore_database --service {name} --env {env}\` (the newest file from the removal; the current contents are saved first, so it can be undone)
+3. If its migrations are newer than the file: \`run_db_migrate --service {name} --env {env}\`
 
 ## "Remove a detached worker"
 1. \`unregister_detached_worker --worker {name}\` → removes from config.json

@@ -14,7 +14,7 @@ export function registerRegisterDetachedWorkerTool(server: McpServer): void {
     {
       title: 'Register Detached Worker',
       description:
-        "Register a detached worker in config.json. Only updates config; it does NOT scaffold files. User must create worker.ts, worker.module.ts, tsconfig.worker.json, the start-worker and start-worker:dev scripts, and processor files manually using nest-common's startWorker(). Queue processors run only in workers. After registering, run sync then infra_deploy.",
+        "Register a detached worker in config.json. It also creates whichever of the base service's src/worker.ts, src/worker.module.ts and tsconfig.worker.json are missing, and the start-worker and start-worker:dev scripts; it never overwrites a file and lists what it created and what it left alone. The processor classes are the user's: register each queue in worker.module.ts and add the processor to its providers. Queue processors run only in workers. After registering, run sync then infra_deploy.",
       inputSchema: {
         name: z.string().describe('Worker name (kebab-case)'),
         baseService: z

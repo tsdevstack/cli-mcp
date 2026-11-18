@@ -14,12 +14,16 @@ export function registerRemoveServiceCloudTool(server: McpServer): void {
     'remove_service_cloud',
     {
       title: 'Remove Service (Cloud)',
-      description: `Remove a service from cloud (deletes container, secrets, database). Cannot be undone. Data is permanently lost.
+      description: `Remove a service from one cloud environment: its containers, workers, migration job, SPA bucket, secrets and database. Cannot be undone, except the database: the CLI saves it to the environment's exports bucket before dropping it (kept 7 days), and restore_database brings it back once the service is deployed again. skipExport drops the database without saving it: only when the save keeps failing and the user agrees.
 
-Follow-up (suggest to the user): if the removed service was a backend (nestjs), Kong still holds stale routes pointing to the deleted service. Run deploy_kong with the same env afterward to regenerate and redeploy the gateway so those routes are cleared.`,
+Follow-up (suggest to the user): take the service out of the project with remove_service, then run infra_deploy for the same env. The deploy removes the service's Kong routes, its load balancer routes and the scheduled jobs that call it; until then they fail.`,
       inputSchema: {
         service: z.string().describe('Service name to remove from cloud'),
         env: z.string().describe('Target environment (dev, staging, prod)'),
+        skipExport: z
+          .boolean()
+          .optional()
+          .describe('Drop the database without saving it first'),
       },
       annotations: {
         readOnlyHint: false,
@@ -28,9 +32,16 @@ Follow-up (suggest to the user): if the removed service was a backend (nestjs), 
         openWorldHint: false,
       },
     },
-    async ({ service, env }) =>
+    async ({ service, env, skipExport }) =>
       runCommand(
-        ['infra:remove-service', service, '--env', env, '--confirm'],
+        [
+          'infra:remove-service',
+          service,
+          '--env',
+          env,
+          '--confirm',
+          ...(skipExport ? ['--skip-export'] : []),
+        ],
         LONG_COMMAND_TIMEOUT_MS,
       ),
   );

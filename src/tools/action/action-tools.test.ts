@@ -22,6 +22,7 @@ import { registerDeployLbTool } from './deploy-lb';
 import { registerRunDbMigrateTool } from './run-db-migrate';
 import { registerDeploySchedulersTool } from './deploy-schedulers';
 import { registerRemoveServiceCloudTool } from './remove-service-cloud';
+import { registerRestoreDatabaseTool } from './restore-database';
 import { registerRemoveDetachedWorkerTool } from './remove-detached-worker';
 import { registerInfraDestroyTool } from './infra-destroy';
 import { registerCloudInitTool } from './cloud-init';
@@ -188,6 +189,12 @@ describe('Action tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerRemoveServiceCloudTool(server)).not.toThrow();
+    });
+
+    it('should register restore_database tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerRestoreDatabaseTool(server)).not.toThrow();
     });
 
     it('should register remove_detached_worker tool', () => {

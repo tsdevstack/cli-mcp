@@ -8,6 +8,12 @@ export {
 } from './command-timeouts.js';
 
 export {
+  COMMAND_OUTPUT_HEAD_CHARS,
+  COMMAND_OUTPUT_MAX_CHARS,
+  TERRAFORM_PROGRESS_LINE,
+} from './command-output.js';
+
+export {
   GET_LOGS_NEWEST_LINES,
   LOG_LEVEL_VALUES,
   LOG_KIND_VALUES,

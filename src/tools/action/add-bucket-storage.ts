@@ -40,7 +40,7 @@ Cloud deployment:
         name: z
           .string()
           .describe(
-            'Bucket logical name (kebab-case, 2-30 chars, e.g. "uploads", "media-assets"). Cloud name derived as {project}-{name}-{env}.',
+            'Bucket logical name (kebab-case, 2-30 chars, e.g. "uploads", "media-assets"). Cloud name derived as {project}-{name}-{env}, plus an account suffix on AWS and GCP.',
           ),
       },
       annotations: {

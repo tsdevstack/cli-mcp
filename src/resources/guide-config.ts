@@ -27,7 +27,7 @@ Structure:
 - \`storage.buckets[]\`: object storage buckets (managed by \`add_bucket_storage\` / \`remove_bucket_storage\`):
   - Each entry: \`{ name: "bucket-name" }\` (kebab-case, 2-30 chars)
   - When buckets exist: docker-compose gets RustFS (S3-compatible, ports 9000+9001), secrets get \`STORAGE_*\` entries
-  - Cloud name derived: \`{project}-{name}-{env}\` (max 63 chars)
+  - Cloud name derived: \`{project}-{name}-{env}\` plus an account suffix on AWS (\`-{accountId}\`) and GCP (\`-{6 characters}\`) (max 63 chars)
   - See docs-site at \`/features/object-storage\` for full storage documentation
 
 ## \`.tsdevstack/infrastructure.json\`

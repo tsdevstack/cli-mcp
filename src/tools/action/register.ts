@@ -35,6 +35,7 @@ import { registerDeployLbTool } from './deploy-lb.js';
 import { registerRunDbMigrateTool } from './run-db-migrate.js';
 import { registerDeploySchedulersTool } from './deploy-schedulers.js';
 import { registerRemoveServiceCloudTool } from './remove-service-cloud.js';
+import { registerRestoreDatabaseTool } from './restore-database.js';
 import { registerRemoveDetachedWorkerTool } from './remove-detached-worker.js';
 import { registerInfraDestroyTool } from './infra-destroy.js';
 
@@ -85,6 +86,7 @@ export function registerActionTools(server: McpServer): void {
   registerRunDbMigrateTool(server);
   registerDeploySchedulersTool(server);
   registerRemoveServiceCloudTool(server);
+  registerRestoreDatabaseTool(server);
   registerRemoveDetachedWorkerTool(server);
   registerInfraDestroyTool(server);
 

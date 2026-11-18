@@ -30,7 +30,7 @@ describe('createServer', () => {
 });
 
 describe('Integration: tools/list', () => {
-  it('should list all 57 tools', async () => {
+  it('should list all 58 tools', async () => {
     const server = createServer();
     const client = new Client({ name: 'test-client', version: '1.0.0' });
     const [clientTransport, serverTransport] =
@@ -41,7 +41,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(57);
+    expect(result.tools.length).toBe(58);
 
     await client.close();
     await server.close();
@@ -120,6 +120,7 @@ describe('Integration: tools/list', () => {
       'run_db_migrate',
       'deploy_schedulers',
       'remove_service_cloud',
+      'restore_database',
       'remove_detached_worker',
       'infra_destroy',
       // Setup/CI/internal
@@ -164,6 +165,7 @@ describe('Integration: tools/list', () => {
       'cloud_secrets_remove',
       'cloud_secrets_cleanup',
       'remove_service_cloud',
+      'restore_database',
       'remove_detached_worker',
       'infra_destroy',
       'remove_scheduler',
