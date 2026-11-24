@@ -33,6 +33,9 @@ import { registerCloudInitTool } from './action/cloud-init';
 import { registerInfraPlanTool } from './query/infra-plan';
 import { registerPlanDbMigrateTool } from './query/plan-db-migrate';
 import { registerSyncTool } from './action/sync';
+import { registerRunCronTool } from './action/run-cron';
+import { registerInfraRunCronTool } from './action/infra-run-cron';
+import { registerRegisterCronTool } from './action/register-cron';
 
 type Register = (server: McpServer) => void;
 
@@ -65,6 +68,13 @@ const LONG_RUNNING: [Register, string, Record<string, string>][] = [
   [registerDeployLbTool, 'deploy_lb', { env: 'dev' }],
   [registerDeploySchedulersTool, 'deploy_schedulers', { env: 'dev' }],
   [registerDeploySchedulerTool, 'deploy_scheduler', {}],
+  // A run lasts as long as the job does
+  [
+    registerInfraRunCronTool,
+    'infra_run_cron',
+    { job: 'usage-report', env: 'dev' },
+  ],
+  [registerRunCronTool, 'run_cron', { name: 'usage-report' }],
   [registerInfraBuildDockerTool, 'infra_build_docker', {}],
   [registerInfraPushDockerTool, 'infra_push_docker', {}],
   [registerInfraBuildKongTool, 'infra_build_kong', {}],
@@ -119,6 +129,38 @@ describe('MCP command timeouts', () => {
     await callTool(registerSyncTool, 'sync', {});
 
     expect(runCommand).toHaveBeenCalledWith(['sync']);
+  });
+
+  it('should pass the cron tools their arguments as the CLI takes them', async () => {
+    await callTool(registerRegisterCronTool, 'register_cron', {
+      service: 'auth-service',
+      name: 'usage-report',
+    });
+    expect(runCommand).toHaveBeenLastCalledWith([
+      'register-cron',
+      '--service',
+      'auth-service',
+      '--name',
+      'usage-report',
+    ]);
+
+    await callTool(registerRunCronTool, 'run_cron', {
+      name: 'usage-report',
+      service: 'auth-service',
+    });
+    expect(runCommand).toHaveBeenLastCalledWith(
+      ['run-cron', 'usage-report', '--service', 'auth-service'],
+      LONG_COMMAND_TIMEOUT_MS,
+    );
+
+    await callTool(registerInfraRunCronTool, 'infra_run_cron', {
+      job: 'usage-report',
+      env: 'dev',
+    });
+    expect(runCommand).toHaveBeenLastCalledWith(
+      ['infra:run-cron', '--job', 'usage-report', '--env', 'dev', '--no-lines'],
+      LONG_COMMAND_TIMEOUT_MS,
+    );
   });
 
   it('should allow a first Azure deploy plus capacity retries', () => {

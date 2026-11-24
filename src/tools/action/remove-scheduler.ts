@@ -14,7 +14,7 @@ export function registerRemoveSchedulerTool(server: McpServer): void {
     {
       title: 'Remove Scheduler',
       description:
-        'Remove a single scheduled job from cloud. Cannot be undone.',
+        "Remove a single scheduled job from cloud: its schedule, and a cron job's job resource and logs. Cannot be undone. Take the job out of infrastructure.json too. On AWS a trigger is named by its schedule ({project}-{service}-{job}); a cron job by either name.",
       inputSchema: {
         job: z.string().optional().describe('Job name to remove (optional)'),
         env: z.string().optional().describe('Target environment (optional)'),

@@ -1,7 +1,7 @@
 /**
  * Register Action Tools
  *
- * Registers all 43 action tools (14 local + 14 cloud + 15 setup/CI/internal) with the MCP server.
+ * Registers all 47 action tools (16 local + 16 cloud + 15 setup/CI/internal) with the MCP server.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -16,6 +16,8 @@ import { registerRemoveServiceTool } from './remove-service.js';
 import { registerGenerateClientTool } from './generate-client.js';
 import { registerRegisterDetachedWorkerTool } from './register-detached-worker.js';
 import { registerUnregisterDetachedWorkerTool } from './unregister-detached-worker.js';
+import { registerRegisterCronTool } from './register-cron.js';
+import { registerRunCronTool } from './run-cron.js';
 import { registerAddBucketStorageTool } from './add-bucket-storage.js';
 import { registerRemoveBucketStorageTool } from './remove-bucket-storage.js';
 import { registerAddMessagingTopicTool } from './add-messaging-topic.js';
@@ -34,6 +36,7 @@ import { registerDeployKongTool } from './deploy-kong.js';
 import { registerDeployLbTool } from './deploy-lb.js';
 import { registerRunDbMigrateTool } from './run-db-migrate.js';
 import { registerDeploySchedulersTool } from './deploy-schedulers.js';
+import { registerInfraRunCronTool } from './infra-run-cron.js';
 import { registerRemoveServiceCloudTool } from './remove-service-cloud.js';
 import { registerRestoreDatabaseTool } from './restore-database.js';
 import { registerRemoveDetachedWorkerTool } from './remove-detached-worker.js';
@@ -67,6 +70,8 @@ export function registerActionTools(server: McpServer): void {
   registerGenerateClientTool(server);
   registerRegisterDetachedWorkerTool(server);
   registerUnregisterDetachedWorkerTool(server);
+  registerRegisterCronTool(server);
+  registerRunCronTool(server);
   registerAddBucketStorageTool(server);
   registerRemoveBucketStorageTool(server);
   registerAddMessagingTopicTool(server);
@@ -85,6 +90,7 @@ export function registerActionTools(server: McpServer): void {
   registerDeployLbTool(server);
   registerRunDbMigrateTool(server);
   registerDeploySchedulersTool(server);
+  registerInfraRunCronTool(server);
   registerRemoveServiceCloudTool(server);
   registerRestoreDatabaseTool(server);
   registerRemoveDetachedWorkerTool(server);

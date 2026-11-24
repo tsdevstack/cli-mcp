@@ -6,6 +6,7 @@ import { createServer } from './server';
 import {
   GET_LOGS_ASK_FIRST,
   GET_SECRET_ASK_FIRST,
+  SECRET_VALUES_USER_SETS,
   SERVER_INSTRUCTIONS,
 } from './constants/index.js';
 
@@ -30,7 +31,7 @@ describe('createServer', () => {
 });
 
 describe('Integration: tools/list', () => {
-  it('should list all 58 tools', async () => {
+  it('should list all 61 tools', async () => {
     const server = createServer();
     const client = new Client({ name: 'test-client', version: '1.0.0' });
     const [clientTransport, serverTransport] =
@@ -41,7 +42,7 @@ describe('Integration: tools/list', () => {
 
     const result = await client.listTools();
 
-    expect(result.tools.length).toBe(58);
+    expect(result.tools.length).toBe(61);
 
     await client.close();
     await server.close();
@@ -107,6 +108,8 @@ describe('Integration: tools/list', () => {
       'generate_client',
       'register_detached_worker',
       'unregister_detached_worker',
+      'register_cron',
+      'run_cron',
       // Cloud
       'cloud_secrets_push',
       'cloud_secrets_set',
@@ -119,6 +122,7 @@ describe('Integration: tools/list', () => {
       'deploy_lb',
       'run_db_migrate',
       'deploy_schedulers',
+      'infra_run_cron',
       'remove_service_cloud',
       'restore_database',
       'remove_detached_worker',
@@ -261,6 +265,47 @@ describe('Integration: sensitive reads', () => {
         .get('get_secret')
         ?.description?.startsWith(GET_SECRET_ASK_FIRST),
     ).toBe(true);
+
+    await client.close();
+    await server.close();
+  });
+});
+
+describe('Integration: secret values', () => {
+  it('should tell the client the user sets secret values in their terminal', async () => {
+    const server = createServer();
+    const client = new Client({ name: 'test-client', version: '1.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const instructions = client.getInstructions();
+    expect(instructions).toContain('never ask for a value');
+    expect(instructions).toContain('npx tsdevstack cloud-secrets:push');
+
+    await client.close();
+    await server.close();
+  });
+
+  it('should start the cloud_secrets_push and cloud_secrets_set descriptions with the user-sets rule', async () => {
+    const server = createServer();
+    const client = new Client({ name: 'test-client', version: '1.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+
+    const result = await client.listTools();
+    const toolsByName = new Map(result.tools.map((t) => [t.name, t]));
+
+    for (const name of ['cloud_secrets_push', 'cloud_secrets_set']) {
+      expect(
+        toolsByName.get(name)?.description?.startsWith(SECRET_VALUES_USER_SETS),
+      ).toBe(true);
+    }
 
     await client.close();
     await server.close();

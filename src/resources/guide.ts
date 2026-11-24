@@ -63,7 +63,7 @@ This means: an endpoint missing from the OpenAPI spec gets no Kong route (404 th
 - Framework secrets (JWT keys, DB passwords, service API keys, service URLs) are auto-generated; don't touch them
 - User secrets (third-party API keys, custom config) go in \`.secrets.user.json\`. Partner API keys are NOT secrets: never put them there or in \`kong.user.yml\` consumers (static keys were removed)
 - Each service only sees secrets assigned to it (scoping via \`secret-map.json\`)
-- Cloud: \`cloud_secrets_push\` never prompts. It generates framework secrets, derives API_URL, APP_URL and KONG_CORS_ORIGINS once DOMAIN is set, and lists user secrets still missing in the cloud, with their scope. Set those (DOMAIN first, then RESEND_API_KEY, EMAIL_FROM and custom ones) with \`cloud_secrets_set\`, passing \`service\` for a secret listed in a service's scope. With the auth template, set first admins with \`cloud_secrets_set ADMIN_EMAILS --service auth-service --env {env}\`
+- Cloud: the user sets secret values in their own terminal. \`npx tsdevstack cloud-secrets:push --env {env}\` asks for DOMAIN and every user secret (ADMIN_EMAILS too, with the auth template) and generates the framework secrets; \`npx tsdevstack cloud-secrets:set {KEY} --env {env}\` (with \`--service {name}\` for a service's scope) sets one. Never ask the user for a secret value. The \`cloud_secrets_push\` tool never prompts: it pushes the framework secrets only, derives API_URL, APP_URL and KONG_CORS_ORIGINS once DOMAIN is set, and lists the user secrets still missing, with their scope
 
 ## Docs-Site Reference
 The framework has a documentation site with detailed guides. When deployed, reference these for deeper reading:

@@ -8,7 +8,10 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { runCommand } from '../../utils/run-command.js';
-import { DEFAULT_COMMAND_TIMEOUT_MS } from '../../constants/index.js';
+import {
+  DEFAULT_COMMAND_TIMEOUT_MS,
+  SECRET_VALUES_USER_SETS,
+} from '../../constants/index.js';
 
 export function registerCloudSecretsSetTool(server: McpServer): void {
   server.registerTool(
@@ -16,7 +19,8 @@ export function registerCloudSecretsSetTool(server: McpServer): void {
     {
       title: 'Cloud Secrets Set',
       description:
-        'Set or update a single secret in cloud. Use for overrides or adding new third-party API keys.',
+        SECRET_VALUES_USER_SETS +
+        'Call this tool only when the user asks you to set a key and gave you its value on their own. It sets or updates one secret in the cloud.',
       inputSchema: {
         key: z.string().describe('Secret key name (e.g. DOMAIN, STRIPE_KEY)'),
         value: z.string().describe('Secret value'),

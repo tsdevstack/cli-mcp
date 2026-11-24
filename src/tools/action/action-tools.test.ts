@@ -10,6 +10,9 @@ import { registerRemoveServiceTool } from './remove-service';
 import { registerGenerateClientTool } from './generate-client';
 import { registerRegisterDetachedWorkerTool } from './register-detached-worker';
 import { registerUnregisterDetachedWorkerTool } from './unregister-detached-worker';
+import { registerRegisterCronTool } from './register-cron';
+import { registerRunCronTool } from './run-cron';
+import { registerInfraRunCronTool } from './infra-run-cron';
 import { registerCloudSecretsPushTool } from './cloud-secrets-push';
 import { registerCloudSecretsSetTool } from './cloud-secrets-set';
 import { registerCloudSecretsRemoveTool } from './cloud-secrets-remove';
@@ -44,7 +47,7 @@ import { registerAddBucketStorageTool } from './add-bucket-storage';
 import { registerRemoveBucketStorageTool } from './remove-bucket-storage';
 
 describe('Action tools registration', () => {
-  it('should register all 41 action tools without errors', () => {
+  it('should register all 47 action tools without errors', () => {
     const server = new McpServer({ name: 'test', version: '1.0.0' });
 
     expect(() => registerActionTools(server)).not.toThrow();
@@ -97,6 +100,24 @@ describe('Action tools registration', () => {
       const server = new McpServer({ name: 'test', version: '1.0.0' });
 
       expect(() => registerRegisterDetachedWorkerTool(server)).not.toThrow();
+    });
+
+    it('should register register_cron tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerRegisterCronTool(server)).not.toThrow();
+    });
+
+    it('should register run_cron tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerRunCronTool(server)).not.toThrow();
+    });
+
+    it('should register infra_run_cron tool', () => {
+      const server = new McpServer({ name: 'test', version: '1.0.0' });
+
+      expect(() => registerInfraRunCronTool(server)).not.toThrow();
     });
 
     it('should register unregister_detached_worker tool', () => {

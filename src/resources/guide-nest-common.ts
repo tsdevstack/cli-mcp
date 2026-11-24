@@ -26,6 +26,7 @@ NEVER install third-party packages for features nest-common already provides:
 - Object storage → \`StorageModule\` (not @aws-sdk/client-s3, not @google-cloud/storage, not @azure/storage-blob)
 - Async messaging → \`MessagingModule\` (not raw ioredis streams, not kafka, not rabbitmq)
 - Database pooling → \`createPrismaConnection()\` (not raw pg Pool)
+- Code on a schedule → a cron job (\`register_cron\`, \`CronJobHandler\`), not \`@nestjs/schedule\` or node-cron in the service (with more than one instance every schedule would run more than once)
 
 ## NEVER use process.env
 Always use \`SecretsService\` to read secrets. The secrets system handles provider detection (local/gcp/aws/azure), caching, and service-scoped access.
@@ -116,6 +117,14 @@ export class UserEventsHandler {
 **Messaging vs BullMQ:** Messaging = inter-service pub/sub (every subscriber gets every message). BullMQ = intra-service job queues (one consumer per job). A subscriber might enqueue a BullMQ job for heavy work.
 
 **Full reference:** See the docs-site at \`/features/async-messaging\` for topic management, naming conventions, and flow diagrams.
+
+## Cron jobs: runCronJob
+A cron job is a class in the service, run on its own schedule as its own task (\`node dist/cron.js <name>\`), then the process exits. \`register_cron\` creates the files; see "Add a scheduled job" in the workflows guide for the steps.
+- The handler: \`@Injectable() class XCron implements CronJobHandler { readonly name = 'x'; async run(signal: AbortSignal): Promise<void> }\`. Return = success, throw = failure. Inject PrismaService and others through the constructor.
+- \`src/cron.module.ts\` lists the handlers: \`providers: provideCronJobs([XCron, YCron])\`. A handler missing from the list exits 2 with the known names.
+- \`runCronJob(CronModule, name)\` (in \`src/cron.ts\`) holds a Redis lock per job (a second start logs a warning and exits 0, skipped), runs the handler in one trace span \`cron <name>\`, and aborts the signal at the job's \`timeout\` or on SIGTERM; after 8 s more it forces the exit. Pass the signal to fetch, check \`signal.aborted\` between long steps.
+- Exit codes: 0 success or skipped, 1 failure or stopped, 2 unknown job. The last log line is \`cron job finished\` (outcome, exitCode, durationMs); every line carries \`cronJob\`.
+- No retries: a failed run waits for the next scheduled time. Keep jobs safe to run again.
 
 ## generateSwaggerDocs(AppModule)
 Generates OpenAPI spec without starting the server. Used internally by CLI commands:

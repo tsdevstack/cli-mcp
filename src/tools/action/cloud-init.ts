@@ -15,11 +15,17 @@ export function registerCloudInitTool(server: McpServer): void {
     {
       title: 'Cloud Init',
       description:
-        'Initialize cloud provider credentials for a specific provider (gcp, aws, azure). One-time setup per provider. Provider must be passed as flag to skip interactive prompt.',
+        'Initialize cloud provider credentials for a specific provider (gcp, aws, azure). One-time setup per provider. Provider must be passed as flag to skip interactive prompt. Without env it sets up and tests every environment of the credentials file (on Azure that writes to each: provider registration, resource group, Key Vault); with env only that one, the others are not called. Pass env when adding one environment.',
       inputSchema: {
         provider: z
           .enum(['gcp', 'aws', 'azure'])
           .describe('Cloud provider to initialize'),
+        env: z
+          .string()
+          .optional()
+          .describe(
+            'Set up and test only this environment (default: every environment of the credentials file)',
+          ),
       },
       annotations: {
         readOnlyHint: false,
@@ -28,7 +34,10 @@ export function registerCloudInitTool(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ provider }) =>
-      runCommand(['cloud:init', `--${provider}`], LONG_COMMAND_TIMEOUT_MS),
+    async ({ provider, env }) =>
+      runCommand(
+        ['cloud:init', `--${provider}`, ...(env ? ['--env', env] : [])],
+        LONG_COMMAND_TIMEOUT_MS,
+      ),
   );
 }

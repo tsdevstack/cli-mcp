@@ -13,7 +13,8 @@ export function registerListSchedulersTool(server: McpServer): void {
     'list_schedulers',
     {
       title: 'List Schedulers',
-      description: 'Scheduled jobs (cron tasks) and their deployment status.',
+      description:
+        "Scheduled jobs of both kinds (cron jobs and triggers): each schedule's state and the last run (a cron job's outcome and time).",
       inputSchema: {
         env: z.string().describe('Target environment (dev, staging, prod)'),
       },

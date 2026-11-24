@@ -49,15 +49,15 @@ No CLI command needed; this is code:
 A backend service reads two scopes: shared (every service reads it) and its own. A secret only one service needs belongs in that service's scope; a value under the top-level \`"secrets"\` object is shared, readable by every backend.
 1. Locally: the user adds the value to the service's section of \`.secrets.user.json\`: \`"offers-service": { "STRIPE_SECRET_KEY": "sk_test_..." }\`
 2. \`generate_secrets\` → regenerates \`.secrets.local.json\`; backends pick the value up within a minute (SecretsService cache), no restart
-3. Cloud: ask the user for the environment's value, then \`cloud_secrets_set\` with the key, \`service: {name}\` and the env (\`cloud_secrets_push\` lists it as missing until then, with the command). Backends read it within 5 minutes, no redeploy
-4. Only a value every service needs goes under the top-level \`"secrets"\` object (cloud: \`cloud_secrets_set\` without \`service\`)
+3. Cloud: the user runs \`npx tsdevstack cloud-secrets:set {KEY} --service {name} --env {env}\` in their own terminal; it asks for the value. Don't ask for the value yourself. Until then \`cloud_secrets_push\` lists it as missing. Backends read it within 5 minutes, no redeploy
+4. Only a value every service needs goes under the top-level \`"secrets"\` object (cloud: the same command without \`--service\`)
 
 Frontends (Next.js, SPA) are different: at deploy they get the shared keys listed in their \`"secrets"\` array (\`tsdevstack://secrets/map\`) as environment variables, so a frontend secret is shared, is listed in that array, and needs \`deploy_services --service {name}\` after a change.
 
 ## "Assign a domain to a frontend app"
 Only \`nextjs\` and \`spa\` apps can have domains. Backend services are NOT publicly available: they're behind Kong. Kong already has a fixed \`api.{DOMAIN}\` URL.
 1. Ask the user first, then \`get_secret DOMAIN --env {env}\` → check if DOMAIN is set in cloud
-2. If DOMAIN is not set: tell user to set it first (\`cloud_secrets_set DOMAIN example.com --env {env}\`), then run \`cloud_secrets_push --env {env}\` to derive API_URL, APP_URL and KONG_CORS_ORIGINS
+2. If DOMAIN is not set: tell the user to run \`npx tsdevstack cloud-secrets:set DOMAIN example.com --env {env}\`, then \`npx tsdevstack cloud-secrets:push --env {env}\` in their own terminal (the push derives API_URL, APP_URL and KONG_CORS_ORIGINS)
 3. If DOMAIN is set: edit \`infrastructure.json\` → add \`"domain": "example.com"\` to the frontend app's env entry
    - If the app doesn't have an entry in the env config yet, create one: \`"frontend": { "domain": "example.com" }\`
 4. For redirect domains (alternate domains that redirect to canonical): add \`"loadBalancer": { "redirectDomains": ["alt.com"] }\` to the env config
@@ -96,7 +96,7 @@ Most projects on GCP or Azure WILL need this because \`minInstances: 0\` (scale 
 The project already exists (created via \`tsdevstack init\`). This is for deploying to a new environment.
 1. \`cloud_init --{provider}\` → checks local credentials + bootstraps the cloud project (enables APIs, creates roles, terraform state bucket)
 2. Configure \`infrastructure.json\` with environment settings (see "Create infrastructure.json" workflow above)
-3. Ask the user for DOMAIN and set it with \`cloud_secrets_set DOMAIN {domain} --env {env}\`, then \`cloud_secrets_push --env {env}\` → generates framework secrets (no prompts), derives API_URL, APP_URL and KONG_CORS_ORIGINS from DOMAIN, and lists user secrets still missing in the cloud (RESEND_API_KEY, EMAIL_FROM, custom ones). Ask the user for each value and set it with \`cloud_secrets_set\`
+3. Tell the user to run \`npx tsdevstack cloud-secrets:push --env {env}\` in their own terminal: it asks for DOMAIN first, then for every secret in \`.secrets.user.json\`, generates the framework secrets and derives API_URL, APP_URL and KONG_CORS_ORIGINS. Don't ask for the values and don't set them yourself; wait until the user says it's done
 4. \`infra_deploy --env {env}\` → the big deploy: Terraform infra (VPC, DB, Redis, storage buckets) + build Docker + push + deploy all services + Kong + LB. This does everything, including creating cloud storage buckets and syncing \`STORAGE_BUCKET_*\` secrets.
 5. Set DNS records on domain registrar portal (from deploy output)
 6. \`deploy_schedulers --env {env}\` (can run in parallel with DNS setup)
@@ -105,7 +105,7 @@ The project already exists (created via \`tsdevstack init\`). This is for deploy
 
 **Step-by-step alternative:** If the user wants more control, they can run individual steps: \`infra_generate\` → \`infra_plan\` → review → \`infra_deploy\` → \`deploy_schedulers\`. (\`infra_deploy\` already includes Kong and the load balancer; run \`infra_generate_kong\` → \`infra_build_kong\` → \`deploy_kong\` or \`deploy_lb\` separately only after later changes.)
 
-**First admin (auth template):** set \`ADMIN_EMAILS\` in the auth-service scope (\`cloud_secrets_set ADMIN_EMAILS --service auth-service --env {env}\`); a confirmed user listed there becomes ADMIN at their next login. Roles are then managed through the auth service's admin API (\`/auth/v1/admin/users\`).
+**First admin (auth template):** the user sets \`ADMIN_EMAILS\` in the auth-service scope: the push asks for it when the local value is set, or \`npx tsdevstack cloud-secrets:set ADMIN_EMAILS --service auth-service --env {env}\` in their own terminal. A confirmed user listed there becomes ADMIN at their next login. Roles are then managed through the auth service's admin API (\`/auth/v1/admin/users\`).
 
 ## "Deploy to a cloud environment (subsequent deploys)"
 1. \`infra_plan --env {env}\` → preview infrastructure changes (always do this first)
@@ -171,13 +171,38 @@ Keys are runtime data behind the auth service API; there is no MCP tool and noth
 Never add \`consumers\` to \`kong.user.yml\` or partner keys to secrets: static keys were removed. Gateway errors: 401 \`api_key_missing\`/\`invalid_api_key\`/\`api_key_revoked\`/\`api_key_expired\`, 429 \`rate_limit_exceeded\`/\`quota_exceeded\`, 503 \`index_unavailable\` (Redis lost the index: call the job or restart the auth service) / \`gateway_unavailable\` (Redis unreachable).
 
 ## "Add a scheduled job"
-Scheduled jobs are cron triggers that call service endpoints over HTTPS. They don't execute code directly; they trigger an HTTP endpoint on an existing service. The service must be deployed before the scheduler can be deployed.
+Two kinds, both entries in an environment's \`scheduledJobs\` in \`infrastructure.json\`:
+- **Cron job** (\`"type": "cron"\`): code in a NestJS service that runs on its own schedule as its own task, then exits. Use it for reports, cleanups, imports, anything longer than a few minutes or heavy. Up to a day per run (almost 7 days on GCP).
+- **Trigger** (an entry with an \`endpoint\`): the schedule calls an endpoint of the running service. Only for short work that must run inside the service's process. The call waits at most 30 min on GCP, about 15 on AWS, 4 on Azure.
+Never add an in-process scheduler (@nestjs/schedule, node-cron) to a service.
+
+### Cron job
+1. \`register_cron --service {service} --name {name}\` (kebab-case, at most 40 characters). It creates \`src/cron/{name}.cron.ts\`, and with the service's first cron job \`src/cron.ts\`, \`src/cron.module.ts\`, \`tsconfig.cron.json\` and the \`cron\` script. It never overwrites.
+2. Write the handler's \`run(signal)\` in \`src/cron/{name}.cron.ts\`: inject what it needs (PrismaService, ...) through the constructor; return = success, throw = failure; check \`signal.aborted\` between long steps.
+3. Second or later cron job of the service: the output prints two lines; add them to \`src/cron.module.ts\` (the import, and the class in the \`handlers\` list). Forgetting it makes the run exit 2.
+4. \`run_cron --name {name} --service {service}\` with the local stack running: exit 0 is success.
+5. Add the printed entry to \`scheduledJobs\` of each environment that should run it:
+   \`\`\`json
+   {
+     "name": "usage-report",
+     "type": "cron",
+     "schedule": "0 3 * * *",
+     "targetService": "auth-service",
+     "timeout": 600
+   }
+   \`\`\`
+   Optional: \`cpu\`, \`memory\` (the migration job's values; default 1 vCPU and 2 GiB, on AWS as \`"1024"\` and \`"2048"\`), \`timezone\` (UTC only on Azure). \`timeout\` 1 to 86400 s (GCP 604740).
+6. \`infra_generate --env {env}\` → \`infra_deploy --env {env}\` (schedules first, then the service with its cron jobs). Later code changes ship with \`deploy_services\`; schedule, \`timeout\`, \`cpu\` or \`memory\` changes with \`infra_generate\` → \`deploy_schedulers\`.
+7. Check it in the cloud at once, don't wait for the schedule: \`infra_run_cron --job {name} --env {env}\`, then \`list_schedulers --env {env}\` (last run). The job's log: \`get_logs\` with source {name} (ask the user first).
+
+### Trigger
 1. Create the endpoint in the target NestJS service:
-   - Add a controller method (e.g., \`@Post('jobs/cleanup-tokens')\`)
-   - Add \`@Public()\` and \`@UseGuards(SchedulerGuard)\` from nest-common (the scheduler calls the service directly, not through Kong; \`SchedulerGuard\` validates requests come from the cloud scheduler)
+   - A controller method (e.g., \`@Post('jobs/cleanup-tokens')\`)
+   - \`@Public()\` and \`@UseGuards(SchedulerGuard)\` from nest-common (the scheduler calls the service directly, not through Kong; \`SchedulerGuard\` checks the call comes from the cloud scheduler)
    - Keep it out of the gateway with \`@ApiExcludeController()\` / \`@ApiExcludeEndpoint()\` (as the auth service's jobs controller does)
-2. Deploy the service so the endpoint exists in cloud
-3. Add the job to \`infrastructure.json\` under the environment's \`scheduledJobs\` array:
+2. \`run_cron --name {name}\` calls it locally.
+3. Deploy the service so the endpoint exists in the cloud
+4. Add the job to \`scheduledJobs\`:
    \`\`\`json
    {
      "name": "cleanup-tokens",
@@ -189,9 +214,10 @@ Scheduled jobs are cron triggers that call service endpoints over HTTPS. They do
    }
    \`\`\`
    \`httpTimeout\` (seconds) is 15 to 1800 on GCP, 15 to 890 on AWS, 15 to 240 on Azure.
-4. \`deploy_schedulers --env {env}\` (or \`deploy_scheduler --env {env} --scheduler cleanup-tokens\`)
+5. \`infra_generate --env {env}\` → \`deploy_schedulers --env {env}\` (or \`deploy_scheduler --env {env} --job cleanup-tokens\`)
+6. \`infra_run_cron --job {name} --env {env}\` to call it now.
 
-**Important:** Services must be deployed before schedulers. Schedulers only make HTTPS calls; they don't run code or access databases directly.
+Names are unique across both kinds. Removing a job: \`remove_scheduler\`, then take the entry out of \`infrastructure.json\`.
 
 **Auth template:** every environment needs \`{"name":"sync-api-key-usage","schedule":"*/5 * * * *","targetService":"auth-service","endpoint":"/auth/jobs/sync-api-key-usage","method":"POST"}\` (API key usage totals and the Redis key index rebuild). \`infra_generate\` warns and prints the entry when it is missing.
 
@@ -225,12 +251,12 @@ Shared packages live in \`packages/\`. User preference: scaffold with rslib, sel
    - **GCP:** \`GCP_WIF_{ENV}\`, \`GCP_SA_{ENV}\`, \`GCP_REGION_{ENV}\`
    - **AWS:** \`AWS_ROLE_ARN_{ENV}\`, \`AWS_REGION_{ENV}\`
    - **Azure:** \`AZURE_CLIENT_ID_{ENV}\`, \`AZURE_TENANT_ID_{ENV}\`, \`AZURE_SUBSCRIPTION_ID_{ENV}\`, \`AZURE_LOCATION_{ENV}\`
-3. BEFORE first CI deploy: set DOMAIN with \`cloud_secrets_set\`, run \`cloud_secrets_push --env {env}\`, then set the user secrets it lists as missing (RESEND_API_KEY, EMAIL_FROM, custom ones; ADMIN_EMAILS with \`--service auth-service\` for the auth template) with \`cloud_secrets_set\`
+3. BEFORE first CI deploy: the user runs \`npx tsdevstack cloud-secrets:push --env {env}\` in their own terminal (it asks for DOMAIN and every user secret)
 4. Workflows are triggered by users on GitHub Actions UI; nice env/service selection available
 5. PR workflow runs automatically on PRs against main (build, lint, tsc, test)
 6. To add a new environment: update \`ci.json\` environments array → \`infra_generate_ci\` → add GitHub secrets → push cloud secrets → deploy
 
-**CLI vs CI/CD:** Both can co-exist and either can manage everything independently. If a user wants CI-only deployments (no local CLI for cloud operations), they still need to set user secrets (DOMAIN, RESEND_API_KEY, EMAIL_FROM, and \`ADMIN_EMAILS\` with \`--service auth-service\`) manually via \`cloud_secrets_set\` with the correct naming; the CI workflow handles framework secrets but can't prompt for user values.
+**CLI vs CI/CD:** Both can co-exist and either can manage everything independently. If a user wants CI-only deployments (no local CLI for cloud operations), they still set the user secrets once from their own terminal (\`npx tsdevstack cloud-secrets:push --env {env}\`); the CI workflow handles framework secrets but can't prompt for user values.
 
 ## "Start local development"
 1. \`npm install\` (if fresh clone)
@@ -294,7 +320,7 @@ Locally, \`EMAIL_PROVIDER\` defaults to \`console\`: emails are logged to the te
 5. Cloud secrets (\`STORAGE_BUCKET_*\`) must be removed separately via \`cloud_secrets_remove\`
 
 ## "Add a custom secret to a service"
-See "Add a secret to a service": the value goes in the service's section of \`.secrets.user.json\` (its own scope), and in the cloud \`cloud_secrets_set\` with \`service: {name}\`.
+See "Add a secret to a service": the value goes in the service's section of \`.secrets.user.json\` (its own scope), and in the cloud the user runs \`npx tsdevstack cloud-secrets:set {KEY} --service {name} --env {env}\` in their own terminal.
 
 **Example**: STRIPE_SECRET_KEY for offers-service only:
 \`\`\`json
@@ -304,7 +330,7 @@ See "Add a secret to a service": the value goes in the service's section of \`.s
   }
 }
 \`\`\`
-Cloud: \`cloud_secrets_set\` with key \`STRIPE_SECRET_KEY\`, \`service: offers-service\` and the env. Not under the top-level \`"secrets"\` object: every service could read it there.
+Cloud: the user runs \`npx tsdevstack cloud-secrets:set STRIPE_SECRET_KEY --service offers-service --env {env}\`. Not under the top-level \`"secrets"\` object: every service could read it there.
 
 ## "Remove a service"
 1. In each environment it ran in: \`remove_service_cloud --service {name} --env {env}\` (deletes its containers, workers, secrets and database; the database is saved first, kept 7 days)

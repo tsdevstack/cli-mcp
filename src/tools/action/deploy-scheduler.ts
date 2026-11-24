@@ -15,7 +15,7 @@ export function registerDeploySchedulerTool(server: McpServer): void {
     {
       title: 'Deploy Scheduler',
       description:
-        'Deploy a single scheduled job. Alternative to batch deploy_schedulers.',
+        'Deploy a single scheduled job, a cron job or a trigger. Alternative to batch deploy_schedulers.',
       inputSchema: {
         job: z
           .string()

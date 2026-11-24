@@ -14,7 +14,8 @@ export function registerDeploySchedulersTool(server: McpServer): void {
     'deploy_schedulers',
     {
       title: 'Deploy Schedulers',
-      description: 'Deploy all scheduled jobs (cron tasks) to cloud.',
+      description:
+        'Deploy all scheduled jobs of an environment, both kinds: the schedules, and each cron job with the image its service runs now (a service never deployed stops it: deploy_services first). Run infra_generate first when infrastructure.json changed.',
       inputSchema: {
         env: z.string().describe('Target environment (dev, staging, prod)'),
       },
